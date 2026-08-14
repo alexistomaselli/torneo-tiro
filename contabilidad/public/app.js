@@ -1736,6 +1736,7 @@ function renderMatchCard(m) {
           </div>
           <div class="flex items-center gap-1.5 justify-center flex-wrap">
             ${zoneBadge}
+            ${m.penaltiesInfo ? `<span class="text-[10px] font-black text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded shadow-sm">${escapeHTML(m.penaltiesInfo)}</span>` : ''}
             <button onclick="toggleGoalsPanel(${m.id}, ${m.homeTeamId}, ${m.awayTeamId})"
                     class="goals-toggle-btn text-xs text-gray-500 hover:text-pitch-400 flex items-center gap-1 transition-colors"
                     id="goals-btn-${m.id}">

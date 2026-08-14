@@ -142,6 +142,7 @@ try { db.prepare("ALTER TABLE players ADD COLUMN dni TEXT").run(); } catch (_) {
 // Safe migration: add shield_url column to teams if not present
 try { db.prepare("ALTER TABLE teams ADD COLUMN shield_url TEXT").run(); } catch (_) {}
 try { db.prepare("ALTER TABLE matches ADD COLUMN match_time TEXT").run(); } catch (_) {}
+try { db.prepare("ALTER TABLE matches ADD COLUMN penalties_info TEXT").run(); } catch (_) {}
 // Safe migration: add points_deduction column to teams if not present
 try { db.prepare("ALTER TABLE teams ADD COLUMN points_deduction INTEGER DEFAULT 0").run(); } catch (_) {}
 
@@ -1024,6 +1025,7 @@ async function handleFixtureApi(req, res, url) {
 
     const allMatches = db.prepare(`
       SELECT m.id, m.round_number AS roundNumber, m.match_date AS matchDate, m.match_time AS matchTime,
+             m.penalties_info AS penaltiesInfo,
              m.home_goals AS homeGoals, m.away_goals AS awayGoals, m.status,
              m.home_team_id AS homeTeamId, m.away_team_id AS awayTeamId,
              ht.name AS homeTeamName, ht.slot_number AS homeSlot, ht.shield_url AS homeShield,
