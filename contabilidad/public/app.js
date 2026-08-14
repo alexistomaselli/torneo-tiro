@@ -2995,6 +2995,13 @@ async function renderEstadisticas() {
           els.statsResultsRoundSelect.appendChild(opt);
         }
 
+        if (state.currentTournamentId !== 6 && state.currentTournamentId !== 7) {
+          const optFinal = document.createElement('option');
+          optFinal.value = 'final_fase';
+          optFinal.textContent = `🏆 Gran Final ${state.selectedPhaseId === '3' ? 'Clausura' : 'Apertura'}`;
+          els.statsResultsRoundSelect.appendChild(optFinal);
+        }
+
         try {
           const resList = await fetch(`/api/stats/current-round?tournamentId=${state.currentTournamentId}`);
           const dataRound = await resList.json();
@@ -3029,7 +3036,38 @@ async function renderEstadisticas() {
     const suspended = await suspendedRes.json();
 
     // Render Standings dynamically based on tournament type
-    if (state.currentTournamentId === 'all') {
+    if (state.currentTournamentId === 6 || state.currentTournamentId === 7) {
+      if (els.statsZonesContainer) els.statsZonesContainer.classList.add('hidden');
+      if (els.statsStandingsContainer) {
+        els.statsStandingsContainer.classList.remove('hidden');
+        const isApertura = state.currentTournamentId === 6;
+        els.statsStandingsContainer.innerHTML = `
+          <div class="bg-surface-850 rounded-2xl border border-white/5 p-6 mb-6">
+            <div class="flex items-center gap-3 pb-4 border-b border-white/5">
+              <span class="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xl">🏆</span>
+              <div>
+                <h3 class="text-sm font-extrabold text-white uppercase tracking-wider">Gran Final del ${isApertura ? 'Apertura 2026' : 'Clausura 2026'}</h3>
+                <p class="text-xs text-amber-400 font-semibold">Ganador Torneo Largo vs. Ganador Torneo Corto</p>
+              </div>
+            </div>
+            ${isApertura ? `
+              <div class="my-6 p-6 rounded-2xl bg-gradient-to-r from-amber-500/10 via-surface-900 to-amber-500/10 border border-amber-500/20 text-center shadow-2xl animate-fade-up">
+                <span class="text-xs font-black uppercase tracking-widest text-amber-400 block mb-2">🎉 CAMPEÓN APERTURA 2026 🎉</span>
+                <div class="flex items-center justify-center gap-3 my-2">
+                  <img src="/logos-equipos/orden-maderas.png" class="w-12 h-12 object-contain" />
+                  <span class="text-2xl font-black text-white tracking-wider">ORDEN MADERAS</span>
+                </div>
+                <span class="text-xs text-gray-400 font-medium block mt-2">Resultado: Orden Maderas 2 - 0 Pollo Mío</span>
+              </div>
+            ` : `
+              <div class="my-6 p-6 rounded-2xl bg-surface-900/50 border border-white/5 text-center">
+                <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">Encuentro programado al concluir ambas competencias del Clausura</span>
+              </div>
+            `}
+          </div>
+        `;
+      }
+    } else if (state.currentTournamentId === 'all') {
       if (els.statsStandingsContainer) els.statsStandingsContainer.classList.add('hidden');
       if (els.statsZonesContainer) els.statsZonesContainer.classList.add('hidden');
     } else if (state.currentTournamentType === 'zonas') {

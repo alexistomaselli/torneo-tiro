@@ -1312,7 +1312,16 @@ async function handleStatsApi(req, res, url) {
 
   // GET /api/stats/results?tournamentId=1&round=1
   if (req.method === 'GET' && url.pathname === '/api/stats/results') {
-    const round = Number(url.searchParams.get('round') || 1);
+    const roundParam = url.searchParams.get('round');
+    if (roundParam === 'final_fase') {
+      const ptRow = db.prepare(`SELECT phase_id FROM phase_tournaments WHERE id = ?`).get(tournamentId);
+      const phaseId = ptRow ? ptRow.phase_id : 1;
+      const finalPt = db.prepare(`SELECT id FROM phase_tournaments WHERE phase_id = ? AND label LIKE '%Final%'`).get(phaseId);
+      const targetId = finalPt ? finalPt.id : 6;
+      sendJson(res, 200, getRoundResults(targetId, 1));
+      return;
+    }
+    const round = Number(roundParam || 1);
     sendJson(res, 200, getRoundResults(tournamentId, round));
     return;
   }
