@@ -1297,10 +1297,7 @@ async function handleStatsApi(req, res, url) {
       WHERE g.is_own_goal = 0
     `;
     const params = [];
-    if (tIdParam && tIdParam !== 'all' && !isNaN(Number(tIdParam))) {
-      query += ` AND m.phase_tournament_id = ?`;
-      params.push(Number(tIdParam));
-    } else if (phaseId !== null) {
+    if (phaseId !== null) {
       query += ` AND m.phase_tournament_id IN (SELECT id FROM phase_tournaments WHERE phase_id = ?)`;
       params.push(phaseId);
     }
@@ -1344,10 +1341,7 @@ async function handleStatsApi(req, res, url) {
       JOIN matches m ON m.id = mc.match_id
     `;
     const params = [];
-    if (tIdParam && tIdParam !== 'all' && !isNaN(Number(tIdParam))) {
-      query += ` WHERE m.phase_tournament_id = ?`;
-      params.push(Number(tIdParam));
-    } else if (phaseId !== null) {
+    if (phaseId !== null) {
       query += ` WHERE m.phase_tournament_id IN (SELECT id FROM phase_tournaments WHERE phase_id = ?)`;
       params.push(phaseId);
     }
