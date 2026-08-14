@@ -230,12 +230,15 @@ async function handleApi(req, res, url) {
   }
 
   if (req.method === 'GET' && url.pathname === '/api/summary') {
-    sendJson(res, 200, getSummary());
+    const phaseParam = url.searchParams.get('phaseId') || url.searchParams.get('tournamentId');
+    sendJson(res, 200, getSummary(phaseParam));
     return;
   }
 
   if (req.method === 'GET' && url.pathname === '/api/tournament') {
-    sendJson(res, 200, getTournament());
+    const tIdParam = url.searchParams.get('id') || url.searchParams.get('tournamentId') || url.searchParams.get('phaseId');
+    const tId = tIdParam === '1' || tIdParam === 'apertura' ? 1 : 2;
+    sendJson(res, 200, getTournament(tId));
     return;
   }
 
@@ -378,8 +381,15 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (req.method === 'GET' && url.pathname === '/api/summary') {
+    const phaseParam = url.searchParams.get('phaseId') || url.searchParams.get('tournamentId');
+    sendJson(res, 200, getSummary(phaseParam));
+    return;
+  }
+
   if (req.method === 'GET' && url.pathname === '/api/movements') {
-    sendJson(res, 200, listMovements());
+    const phaseParam = url.searchParams.get('phaseId') || url.searchParams.get('phase') || url.searchParams.get('tournamentId');
+    sendJson(res, 200, listMovements(phaseParam));
     return;
   }
 
@@ -443,7 +453,7 @@ async function handleApi(req, res, url) {
   sendJson(res, 404, { error: 'Ruta no encontrada.' });
 }
 
-function getSummary() {
+function getSummary(phaseParam = null) {
   const row = db.prepare(`
     SELECT
       COALESCE(SUM(CASE WHEN type = 'income' THEN amount_cents ELSE 0 END), 0) AS incomeCents,
@@ -456,25 +466,69 @@ function getSummary() {
   const expenseCents = Number(row.expenseCents || 0);
   const balanceCents = incomeCents - expenseCents;
 
-  const tournament = getTournament();
+  let tournamentId = 2; // Default to Clausura
+  if (phaseParam === '1' || phaseParam === 'apertura') {
+    tournamentId = 1;
+  } else if (phaseParam === '3' || phaseParam === 'clausura' || phaseParam === '2') {
+    tournamentId = 2;
+  } else if (phaseParam === 'all') {
+    tournamentId = 'all';
+  }
+
+  let tournament;
+  let phaseIncomeCents = 0;
+
+  if (tournamentId === 1) {
+    tournament = getTournament(1);
+    const incRow = db.prepare(`
+      SELECT COALESCE(SUM(amount_cents), 0) AS inc
+      FROM movements
+      WHERE type = 'income' AND category = 'Inscripción' AND occurred_on <= '2026-07-31'
+    `).get();
+    phaseIncomeCents = Number(incRow.inc || 0);
+  } else if (tournamentId === 2) {
+    tournament = getTournament(2);
+    const incRow = db.prepare(`
+      SELECT COALESCE(SUM(amount_cents), 0) AS inc
+      FROM movements
+      WHERE type = 'income' AND category = 'Inscripción' AND occurred_on >= '2026-08-01'
+    `).get();
+    phaseIncomeCents = Number(incRow.inc || 0);
+  } else {
+    // All / Anual
+    const t1 = getTournament(1);
+    const t2 = getTournament(2);
+    tournament = {
+      id: 'all',
+      name: 'Anual 2026',
+      budgetCents: (t1.budgetCents || 0) + (t2.budgetCents || 0),
+      startDate: t1.startDate,
+      endDate: t2.endDate,
+      notes: 'Presupuesto total anual sumando Apertura y Clausura.'
+    };
+    const incRow = db.prepare(`
+      SELECT COALESCE(SUM(amount_cents), 0) AS inc
+      FROM movements
+      WHERE type = 'income' AND category = 'Inscripción'
+    `).get();
+    phaseIncomeCents = Number(incRow.inc || 0);
+  }
+
   const budgetCents = Number(tournament.budgetCents || 0);
-  // Cuánto falta cobrar del presupuesto total
-  const pendingCollectionCents = Math.max(0, budgetCents - incomeCents);
-  // Progreso de cobro como porcentaje del presupuesto (0-100)
-  const collectionProgressPct = budgetCents > 0 ? Math.min(100, Math.round((incomeCents / budgetCents) * 100)) : null;
-  // Superávit (positivo) o déficit (negativo) del balance respecto al presupuesto
-  const budgetBalanceCents = incomeCents - expenseCents - budgetCents;
+  const pendingCollectionCents = Math.max(0, budgetCents - phaseIncomeCents);
+  const collectionProgressPct = budgetCents > 0 ? Math.min(100, Math.round((phaseIncomeCents / budgetCents) * 100)) : null;
+  const budgetBalanceCents = phaseIncomeCents - expenseCents - budgetCents;
 
   return {
     balanceCents,
     incomeCents,
     expenseCents,
     movementCount: Number(row.movementCount || 0),
-    // Tournament KPIs
     tournament: {
       id: tournament.id,
       name: tournament.name,
       budgetCents,
+      phaseIncomeCents,
       pendingCollectionCents,
       collectionProgressPct,
       budgetBalanceCents,
@@ -482,7 +536,7 @@ function getSummary() {
   };
 }
 
-function getTournament() {
+function getTournament(id = 2) {
   const row = db.prepare(`
     SELECT
       id,
@@ -492,9 +546,9 @@ function getTournament() {
       end_date AS endDate,
       notes
     FROM tournaments
-    WHERE id = 1
-  `).get();
-  return row ? mapPlainObject(row) : { id: 1, name: 'Torneo', budgetCents: 0, startDate: null, endDate: null, notes: '' };
+    WHERE id = ?
+  `).get(id);
+  return row ? mapPlainObject(row) : { id: id, name: 'Torneo', budgetCents: 0, startDate: null, endDate: null, notes: '' };
 }
 
 function listTeams() {
@@ -511,8 +565,8 @@ function listTeams() {
   `).all().map(mapPlainObject);
 }
 
-function listMovements() {
-  return db.prepare(`
+function listMovements(phaseParam = null) {
+  let query = `
     SELECT
       movements.id,
       movements.type,
@@ -529,8 +583,15 @@ function listMovements() {
       movements.created_at AS createdAt
     FROM movements
     LEFT JOIN teams ON teams.id = movements.team_id
-    ORDER BY movements.occurred_on DESC, movements.id DESC
-  `).all().map(mapPlainObject);
+  `;
+  const params = [];
+  if (phaseParam === '1' || phaseParam === 'apertura') {
+    query += ` WHERE movements.occurred_on <= '2026-07-31'`;
+  } else if (phaseParam === '3' || phaseParam === 'clausura' || phaseParam === '2') {
+    query += ` WHERE movements.occurred_on >= '2026-08-01'`;
+  }
+  query += ` ORDER BY movements.occurred_on DESC, movements.id DESC`;
+  return db.prepare(query).all(...params).map(mapPlainObject);
 }
 
 function getTeamById(teamId) {
@@ -1188,16 +1249,21 @@ async function handleFixtureApi(req, res, url) {
 
 async function handleStatsApi(req, res, url) {
   const tIdParam = url.searchParams.get('tournamentId');
-  const isGlobal = tIdParam === 'all';
+  const pIdParam = url.searchParams.get('phaseId');
+  const isGlobal = tIdParam === 'all' || pIdParam === 'all';
   const tournamentId = Number(tIdParam || 1);
   const group = url.searchParams.get('group') || null;
 
   // Resolve phase_id if not global
   let phaseId = null;
-  if (!isGlobal && !isNaN(tournamentId)) {
-    const ptRow = db.prepare(`SELECT phase_id FROM phase_tournaments WHERE id = ?`).get(tournamentId);
-    if (ptRow) {
-      phaseId = ptRow.phase_id;
+  if (!isGlobal) {
+    if (pIdParam && !isNaN(Number(pIdParam))) {
+      phaseId = Number(pIdParam);
+    } else if (!isNaN(tournamentId)) {
+      const ptRow = db.prepare(`SELECT phase_id FROM phase_tournaments WHERE id = ?`).get(tournamentId);
+      if (ptRow) {
+        phaseId = ptRow.phase_id;
+      }
     }
   }
 

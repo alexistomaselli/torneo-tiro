@@ -10,8 +10,9 @@ const state = {
   movementsEditEnabled: false,
   currentHistorialSubtab: 'list',
   currentChartMode: 'paid', // 'paid' or 'pending',
-  currentTournamentId: 1,
+  currentTournamentId: 4, // Default to Torneo Largo 2 (Clausura)
   currentTournamentType: 'todos_contra_todos',
+  selectedPhaseId: '3', // Default to Clausura 2026 phase
   phasesLoaded: false,
   currentFilter: 'all',
   currentTeamFilter: 'all',
@@ -39,7 +40,7 @@ function cacheElements() {
     'formError', 'submitBtn', 'typeToggle', 'categorySelect',
     'categoryCustomInput', 'methodSelect', 'methodCustomInput',
     'movCountBadge', 'deleteModal', 'deleteModalBackdrop',
-    'deleteConfirm', 'deleteCancel', 'footerTime',
+    'deleteConfirm', 'deleteCancel', 'footerTime', 'globalPhaseSelect',
     // Tournament
     'tournamentName', 'budgetValue', 'pendingValue',
     'collectionProgressBar', 'collectionProgressPct',
@@ -102,6 +103,23 @@ function bindEvents() {
       }
     });
   });
+
+  // Global Phase Select
+  if (els.globalPhaseSelect) {
+    els.globalPhaseSelect.value = state.selectedPhaseId || '3';
+    els.globalPhaseSelect.addEventListener('change', (e) => {
+      state.selectedPhaseId = e.target.value;
+      if (state.selectedPhaseId !== 'all') {
+        fixture.currentPhaseId = Number(state.selectedPhaseId);
+      }
+      refreshAll();
+      if (state.activeTab === 'estadisticas') {
+        renderStatsView();
+      } else if (state.activeTab === 'fixture') {
+        loadFixture();
+      }
+    });
+  }
 
   // Fixture sub-nav
   bindFixtureEvents();
@@ -350,10 +368,11 @@ async function refreshAll() {
   clearFormError();
 
   try {
+    const phaseParam = state.selectedPhaseId || '3';
     const [summary, teams, movements] = await Promise.all([
-      fetchJSON('/api/summary'),
+      fetchJSON(`/api/summary?phaseId=${phaseParam}`),
       fetchJSON('/api/teams'),
-      fetchJSON('/api/movements'),
+      fetchJSON(`/api/movements?phaseId=${phaseParam}`),
     ]);
 
     state.summary = summary;
@@ -2895,12 +2914,13 @@ async function renderEstadisticas() {
     }
 
     const simulateDeduction = els.statsSimulateDeduction && els.statsSimulateDeduction.checked;
+    const phaseParam = state.selectedPhaseId || '3';
 
-    // Parallel API requests filtering by selected tournamentId
+    // Parallel API requests filtering by selected phaseId
     const [scorersRes, cardsRes, suspendedRes] = await Promise.all([
-      fetch(`/api/stats/scorers?tournamentId=${state.currentTournamentId}`),
-      fetch(`/api/stats/cards?tournamentId=${state.currentTournamentId}`),
-      fetch(`/api/stats/suspended?tournamentId=${state.currentTournamentId}`)
+      fetch(`/api/stats/scorers?phaseId=${phaseParam}`),
+      fetch(`/api/stats/cards?phaseId=${phaseParam}`),
+      fetch(`/api/stats/suspended?phaseId=${phaseParam}`)
     ]);
 
     const scorers = await scorersRes.json();
