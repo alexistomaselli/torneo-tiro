@@ -1,0 +1,5 @@
+.DS_Store
+*.log
+data/*.sqlite.bak*
+data/*.sqlite-*
+!data/contabilidad.sqlite

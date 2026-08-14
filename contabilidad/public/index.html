@@ -1,0 +1,1200 @@
+<!doctype html>
+<html lang="es" class="dark">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tiro | Torneo +30</title>
+  <meta name="description" content="Panel de tesorería para el torneo: movimientos, equipos y balance." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+    rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+          colors: {
+            pitch: { 50: '#f0fdf4', 100: '#dcfce7', 500: '#22c55e', 600: '#16a34a', 700: '#15803d', 800: '#166534', 900: '#14532d' },
+            surface: { 50: '#f8f9fa', 100: '#f1f3f5', 200: '#e9ecef', 800: '#1c1f26', 850: '#161920', 900: '#0f1117', 950: '#090b10' },
+          },
+          animation: {
+            'slide-in': 'slideIn 0.35s cubic-bezier(.16,1,.3,1) both',
+            'fade-up': 'fadeUp 0.4s ease both',
+            'toast-in': 'toastIn 0.3s ease both',
+            'toast-out': 'toastOut 0.3s ease both',
+          },
+          keyframes: {
+            slideIn: { from: { opacity: 0, transform: 'translateX(-12px)' }, to: { opacity: 1, transform: 'translateX(0)' } },
+            fadeUp: { from: { opacity: 0, transform: 'translateY(16px)' }, to: { opacity: 1, transform: 'translateY(0)' } },
+            toastIn: { from: { opacity: 0, transform: 'translateY(-12px) scale(0.96)' }, to: { opacity: 1, transform: 'translateY(0) scale(1)' } },
+            toastOut: { from: { opacity: 1, transform: 'translateY(0) scale(1)' }, to: { opacity: 0, transform: 'translateY(-8px) scale(0.96)' } },
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="./styles.css" />
+  <script src="./app.js?v=6" defer></script>
+</head>
+
+<body class="bg-surface-900 text-gray-100 antialiased min-h-screen font-sans">
+
+  <!-- Toast container -->
+  <div id="toastContainer"
+    class="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 pointer-events-none w-full max-w-sm px-4">
+  </div>
+
+  <div class="flex h-screen w-full overflow-hidden">
+
+    <!-- ── LEFT SIDEBAR ── -->
+    <aside class="w-64 flex-shrink-0 bg-surface-850 border-r border-white/5 flex flex-col no-print">
+      <!-- APP BRANDING -->
+      <div class="p-6 border-b border-white/5 flex flex-col items-center justify-center gap-3">
+        <div
+          class="w-16 h-16 rounded-2xl bg-surface-800 border-2 border-white/10 flex items-center justify-center flex-shrink-0 overflow-hidden shadow-lg">
+          <img src="./logo-torneo.png" alt="Logo Torneo" class="w-full h-full object-cover" />
+        </div>
+        <div class="text-center">
+          <h1 class="text-lg font-extrabold text-white leading-tight">Torneo Tiro</h1>
+          <p class="text-xs font-semibold text-pitch-400 uppercase tracking-widest mt-1">Gestión Central</p>
+        </div>
+      </div>
+
+      <!-- NAVIGATION -->
+      <nav class="flex-1 overflow-y-auto py-6 px-4 flex flex-col gap-6" role="tablist">
+
+        <!-- MODULE: TESORERÍA -->
+        <div>
+          <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-2">Tesorería</p>
+          <div class="flex flex-col gap-1">
+            <button role="tab" data-tab="registrar" class="sidebar-btn sidebar-btn--active" id="tab-registrar">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              </svg>
+              <span>Caja / Registro</span>
+            </button>
+            <button role="tab" data-tab="historial" class="sidebar-btn" id="tab-historial">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+              </svg>
+              <span>Historial</span>
+            </button>
+            <button role="tab" data-tab="torneo" class="sidebar-btn" id="tab-torneo">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              <span>Config. Torneo</span>
+            </button>
+            <button role="tab" data-tab="equipos" class="sidebar-btn" id="tab-equipos">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span>Clubes (Notas)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- MODULE: COMPETICIÓN -->
+        <div>
+          <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-2">Competición deportiva</p>
+          <div class="flex flex-col gap-1">
+            <button role="tab" data-tab="planteles" class="sidebar-btn text-emerald-400" id="tab-planteles">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+              <span>Listas de Buena Fe</span>
+            </button>
+            <button role="tab" data-tab="fixture" class="sidebar-btn" id="tab-fixture">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span>Fixture & Tablas</span>
+            </button>
+            <button role="tab" data-tab="estadisticas" class="sidebar-btn" id="tab-estadisticas">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              <span>Estadísticas</span>
+            </button>
+          </div>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- ── MAIN CONTENT AREA ── -->
+    <div class="flex-1 flex flex-col h-screen overflow-hidden bg-surface-900 relative">
+
+      <!-- Top Title Bar -->
+      <header
+        class="h-16 flex-shrink-0 flex items-center justify-between px-8 border-b border-white/5 bg-surface-900/80 backdrop-blur z-10 no-print">
+        <div>
+          <span class="text-xs font-semibold text-gray-400 uppercase tracking-widest">Torneo Actual</span>
+          <h2 id="tournamentName" class="text-sm font-bold text-white mt-0.5">Cargando...</h2>
+        </div>
+        <div class="flex items-center gap-4">
+          <div id="appStatus"
+            class="status-pill text-xs font-semibold px-3 py-1.5 rounded-full bg-surface-800 text-gray-400 border border-white/5 flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-gray-500 inline-block"></span>
+            <span class="status-text">Cargando...</span>
+          </div>
+          <button id="refreshBtn" type="button" title="Actualizar Datos"
+            class="w-8 h-8 rounded-lg bg-surface-800 border border-white/5 text-gray-400 hover:text-white hover:bg-surface-700 transition-colors flex items-center justify-center">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- KPI STRIP -->
+      <section id="kpi-strip" class="flex-shrink-0 px-8 py-5 border-b border-white/5 bg-surface-900">
+        <div class="grid grid-cols-3 xl:grid-cols-6 gap-3 mb-3">
+          <article class="kpi-card rounded-xl bg-surface-850 border border-white/5 p-3 flex flex-col gap-1">
+            <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Balance</span>
+            <strong id="balanceValue" class="text-lg font-extrabold text-pitch-400 leading-tight">$0,00</strong>
+          </article>
+          <article class="kpi-card rounded-xl bg-surface-850 border border-white/5 p-3 flex flex-col gap-1">
+            <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Cobrado</span>
+            <strong id="incomeValue" class="text-lg font-extrabold text-emerald-400 leading-tight">$0,00</strong>
+          </article>
+          <article class="kpi-card rounded-xl bg-surface-850 border border-white/5 p-3 flex flex-col gap-1">
+            <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Pagado</span>
+            <strong id="expenseValue" class="text-lg font-extrabold text-red-400 leading-tight">$0,00</strong>
+          </article>
+          <article class="kpi-card rounded-xl bg-surface-850 border border-amber-500/10 p-3 flex flex-col gap-1">
+            <span class="text-[10px] font-bold text-amber-600 uppercase tracking-wider">Presupuesto</span>
+            <strong id="budgetValue" class="text-lg font-extrabold text-amber-400 leading-tight">$0,00</strong>
+          </article>
+          <article class="kpi-card rounded-xl bg-surface-850 border border-white/5 p-3 flex flex-col gap-1">
+            <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Falta cobrar</span>
+            <strong id="pendingValue" class="text-lg font-extrabold text-orange-400 leading-tight">$0,00</strong>
+          </article>
+          <article class="kpi-card rounded-xl bg-surface-850 border border-white/5 p-3 flex flex-col gap-1">
+            <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Movimientos</span>
+            <strong id="movementCountValue" class="text-lg font-extrabold text-sky-400 leading-tight">0</strong>
+          </article>
+        </div>
+        <div class="bg-surface-850 rounded-lg border border-white/5 px-3 py-2 flex items-center gap-3">
+          <span class="text-[10px] font-bold text-gray-500 whitespace-nowrap uppercase tracking-wider">Cobro
+            prespupuestado</span>
+          <div class="flex-1 bg-surface-900 rounded-full h-1.5 overflow-hidden">
+            <div id="collectionProgressBar"
+              class="h-1.5 rounded-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all duration-700"
+              style="width:0%"></div>
+          </div>
+          <span id="collectionProgressPct"
+            class="text-xs font-bold text-emerald-400 whitespace-nowrap w-8 text-right">0%</span>
+        </div>
+      </section>
+
+      <!-- SCROLLABLE TAB VIEWS -->
+      <main class="flex-1 overflow-y-auto p-8 relative">
+
+        <!-- ── TAB: REGISTRAR ── -->
+        <section id="panel-registrar" class="tab-panel animate-fade-up" role="tabpanel">
+          <div class="max-w-2xl mx-auto">
+            <div class="bg-surface-850 rounded-2xl border border-white/5 p-6">
+              <div class="mb-6">
+                <p class="text-xs font-semibold text-pitch-400 uppercase tracking-widest mb-1">Nuevo movimiento</p>
+                <h2 class="text-xl font-bold text-white">Registrar cobro o pago</h2>
+              </div>
+
+              <div id="formError"
+                class="hidden mb-4 p-3 rounded-xl bg-red-950/60 border border-red-800/50 text-red-400 text-sm"></div>
+
+              <form id="movementForm" class="grid grid-cols-1 sm:grid-cols-2 gap-4" novalidate>
+
+                <!-- Tipo -->
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Tipo</label>
+                  <div id="typeToggle" class="flex rounded-xl overflow-hidden border border-white/10 bg-surface-900">
+                    <button type="button" data-type="income"
+                      class="type-btn type-btn--active flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold transition-all">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                      </svg>
+                      Cobro
+                    </button>
+                    <button type="button" data-type="expense"
+                      class="type-btn flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold transition-all">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                      </svg>
+                      Pago
+                    </button>
+                  </div>
+                  <input type="hidden" name="type" value="income" />
+                </div>
+
+                <!-- Monto -->
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Monto <span
+                      class="text-red-500">*</span></label>
+                  <div class="relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-sm">$</span>
+                    <input name="amount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00"
+                      required class="form-input pl-7" />
+                  </div>
+                </div>
+
+                <!-- Fecha -->
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Fecha <span
+                      class="text-red-500">*</span></label>
+                  <input name="date" type="date" required class="form-input" />
+                </div>
+
+                <!-- Categoría -->
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Categoría <span
+                      class="text-red-500">*</span></label>
+                  <select name="category" required class="form-input" id="categorySelect">
+                    <option value="">— Seleccioná —</option>
+                    <optgroup label="Ingresos">
+                      <option value="Inscripción">Inscripción</option>
+                      <option value="Cuota mensual">Cuota mensual</option>
+                      <option value="Multa">Multa</option>
+                      <option value="Donación">Donación</option>
+                    </optgroup>
+                    <optgroup label="Egresos">
+                      <option value="Arbitraje">Arbitraje</option>
+                      <option value="Alquiler de cancha">Alquiler de cancha</option>
+                      <option value="Premio">Premio</option>
+                      <option value="Material deportivo">Material deportivo</option>
+                      <option value="Gastos administrativos">Gastos administrativos</option>
+                    </optgroup>
+                    <option value="__otro__">Otro...</option>
+                  </select>
+                  <input name="categoryCustom" type="text" placeholder="Especificar categoría" class="form-input hidden"
+                    id="categoryCustomInput" />
+                </div>
+
+                <!-- Método -->
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Método de pago <span
+                      class="text-red-500">*</span></label>
+                  <select name="method" required class="form-input" id="methodSelect">
+                    <option value="">— Seleccioná —</option>
+                    <option value="Efectivo">Efectivo</option>
+                    <option value="Transferencia bancaria">Transferencia bancaria</option>
+                    <option value="Mercado Pago">Mercado Pago</option>
+                    <option value="Débito">Débito</option>
+                    <option value="Crédito">Crédito</option>
+                    <option value="__otro__">Otro...</option>
+                  </select>
+                  <input name="methodCustom" type="text" placeholder="Especificar método" class="form-input hidden"
+                    id="methodCustomInput" />
+                </div>
+
+                <!-- Equipo -->
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Equipo</label>
+                  <select name="teamId" class="form-input">
+                    <option value="">Sin equipo</option>
+                  </select>
+                </div>
+
+                <!-- Descripción -->
+                <div class="flex flex-col gap-1.5 sm:col-span-2">
+                  <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Descripción <span
+                      class="text-gray-600 font-normal normal-case">(opcional)</span></label>
+                  <textarea name="description" rows="3" placeholder="Detalle adicional del movimiento"
+                    class="form-input resize-none"></textarea>
+                </div>
+
+                <!-- Submit -->
+                <div class="sm:col-span-2 flex items-center gap-3 pt-2">
+                  <input type="hidden" name="id">
+                  <button type="submit" id="submitBtn" class="btn-primary flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span id="submitBtnText">Guardar movimiento</span>
+                  </button>
+                  <button type="button" id="cancelEditBtn"
+                    class="px-4 py-2 text-xs font-semibold text-gray-400 hover:text-white transition-colors hidden"
+                    onclick="cancelEditMovement()">
+                    Cancelar edición
+                  </button>
+                  <span class="text-xs text-gray-600">Los montos se guardan en centavos para evitar redondeos</span>
+                </div>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── TAB: HISTORIAL ── -->
+        <section id="panel-historial" class="tab-panel hidden animate-fade-up" role="tabpanel">
+          <div class="bg-surface-850 rounded-2xl border border-white/5 overflow-hidden">
+            <div class="px-6 py-4 border-b border-white/5 flex items-center justify-between">
+              <div>
+                <p class="text-xs font-semibold text-pitch-400 uppercase tracking-widest mb-0.5">Registro</p>
+                <h2 class="text-lg font-bold text-white">Movimientos recientes</h2>
+              </div>
+              <span id="movCountBadge"
+                class="text-xs font-semibold px-2 py-1 rounded-lg bg-surface-800 text-gray-400 border border-white/5">—</span>
+            </div>
+
+            <!-- Sub-navegación Historial -->
+            <div class="px-6 py-2 bg-surface-900/30 border-b border-white/5 flex gap-1 no-print">
+              <button id="historial-subtab-list" type="button" class="fixture-sub-btn active">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+                Lista de Movimientos
+              </button>
+              <button id="historial-subtab-chart" type="button" class="fixture-sub-btn">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+                </svg>
+                Gráfico por Categoría
+              </button>
+            </div>
+
+            <!-- Contenedor Lista -->
+            <div id="historial-list-view">
+              <!-- Filtros rápidos -->
+              <div class="px-6 py-3 border-b border-white/5 flex items-center justify-between gap-4 flex-wrap">
+                <div class="flex items-center gap-4 flex-wrap">
+                  <div class="flex gap-2 flex-wrap">
+                    <button type="button" data-filter="all" class="filter-btn filter-btn--active">Todos</button>
+                    <button type="button" data-filter="income" class="filter-btn">Cobros</button>
+                    <button type="button" data-filter="expense" class="filter-btn">Pagos</button>
+                    <button type="button" data-filter="teams-insc" class="filter-btn">Inscripciones Equipo</button>
+                  </div>
+                  
+                  <!-- Filtro por Equipo -->
+                  <div class="flex items-center gap-2 border-l border-white/10 pl-4 ml-2 no-print">
+                    <label for="teamFilterSelect" class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Equipo:</label>
+                    <select id="teamFilterSelect" class="bg-surface-800 border border-white/5 rounded-lg text-xs px-3 py-1.5 text-gray-300 focus:outline-none focus:ring-1 focus:ring-pitch-500/50">
+                      <option value="all">Todos</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-4 flex-wrap">
+                  <!-- Toggle Edición de Movimientos -->
+                  <label class="hidden relative inline-flex items-center cursor-pointer select-none">
+                    <input type="checkbox" id="movementsEditToggle" class="sr-only peer">
+                    <div
+                      class="w-9 h-5 bg-surface-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500">
+                    </div>
+                    <span class="ms-2 text-[10px] font-bold text-gray-400 peer-checked:text-blue-400 uppercase tracking-widest flex items-center gap-1.5">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                      <span>Editar <kbd class="px-1 py-0.5 rounded bg-surface-900 border border-white/10 font-mono text-[9px] text-gray-400">E</kbd></span>
+                    </span>
+                  </label>
+
+                  <button id="exportPdfBtn" type="button"
+                  class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-800 border border-white/5 text-xs font-bold text-gray-400 hover:text-white hover:bg-surface-700 transition-all">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Exportar PDF
+                </button>
+              </div>
+            </div>
+
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm min-w-[720px]">
+                  <thead>
+                    <tr class="border-b border-white/5 bg-surface-900/50">
+                      <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Fecha
+                      </th>
+                      <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Tipo
+                      </th>
+                      <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Monto
+                      </th>
+                      <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        Categoría</th>
+                      <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Método
+                      </th>
+                      <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Equipo
+                      </th>
+                      <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        Descripción</th>
+                      <th class="px-4 py-3 w-10"></th>
+                    </tr>
+                  </thead>
+                  <tbody id="movementsTbody" class="divide-y divide-white/5">
+                    <tr>
+                      <td colspan="8" class="px-4 py-8 text-center text-gray-600 text-sm">Cargando movimientos...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Contenedor Gráfico -->
+            <div id="historial-chart-view" class="hidden p-6 no-print">
+              <!-- Selector de tipo de gráfico: Realizado vs Pendiente -->
+              <div class="flex justify-center mb-6">
+                <div class="inline-flex rounded-xl overflow-hidden border border-white/10 bg-surface-900 p-0.5">
+                  <button type="button" id="chart-toggle-paid" class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all">
+                    Egresos Realizados
+                  </button>
+                  <button type="button" id="chart-toggle-pending" class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all">
+                    Egresos Pendientes
+                  </button>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                <!-- Columna Izquierda: Gráfico SVG Donut -->
+                <div class="flex flex-col items-center justify-center relative">
+                  <div class="w-64 h-64 relative flex items-center justify-center">
+                    <svg id="categoriesDonutSvg" viewBox="0 0 120 120" class="w-full h-full drop-shadow-2xl">
+                      <!-- Sectores de dona generados dinámicamente -->
+                    </svg>
+                    <!-- Detalle flotante en el centro del Donut -->
+                    <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center p-4">
+                      <span id="donutCenterLabel" class="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Total Pagado</span>
+                      <strong id="donutCenterAmount" class="text-xl font-extrabold text-white leading-none">$0,00</strong>
+                      <span id="donutCenterPercent" class="text-xs font-semibold text-pitch-400 mt-1"></span>
+                    </div>
+                  </div>
+
+                  <!-- Indicadores Financieros Adicionales -->
+                  <div class="mt-6 grid grid-cols-3 gap-2 w-full max-w-sm justify-center">
+                    <div class="bg-surface-900/40 border border-white/5 rounded-xl p-2 flex flex-col items-center gap-0.5 text-center">
+                      <span class="text-[9px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Dinero Disponible</span>
+                      <strong id="chartAvailableMoney" class="text-xs font-extrabold text-emerald-400">$0,00</strong>
+                    </div>
+                    <div class="bg-surface-900/40 border border-white/5 rounded-xl p-2 flex flex-col items-center gap-0.5 text-center">
+                      <span class="text-[9px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Dinero por Cobrar</span>
+                      <strong id="chartPendingCollection" class="text-xs font-extrabold text-orange-400">$0,00</strong>
+                    </div>
+                    <div class="bg-surface-900/40 border border-white/5 rounded-xl p-2 flex flex-col items-center gap-0.5 text-center">
+                      <span class="text-[9px] font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap">Dinero por Pagar</span>
+                      <strong id="chartPendingPayments" class="text-xs font-extrabold text-red-400">$0,00</strong>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Columna Derecha: Leyenda e Histograma de Categorías -->
+                <div class="space-y-4">
+                  <div class="flex justify-between items-center pb-2 border-b border-white/5">
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest">Desglose de Egresos</h3>
+                    <span id="chartTotalExpenseBadge" class="text-xs font-bold text-red-400 bg-red-500/10 px-2.5 py-0.5 rounded-full border border-red-500/20">$0,00</span>
+                  </div>
+                  <div id="categoriesChartList" class="space-y-3 max-h-[300px] overflow-y-auto pr-2">
+                    <!-- Dinámico -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- Contenedor Resumen Financiero Proyectado -->
+              <div id="chart-financial-summary" class="border-t border-white/5 mt-8 pt-8 no-print animate-fade-up">
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                  <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                  Resumen de Presupuesto Proyectado
+                </h3>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <!-- Tarjeta 1: Pagos Realizados -->
+                  <div class="bg-surface-900/20 border border-white/5 rounded-2xl p-5 flex flex-col">
+                    <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center justify-between gap-2">
+                      <span class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        Pagos Realizados
+                      </span>
+                      <span id="summaryPaidTotal" class="text-xs font-black text-emerald-400">$0,00</span>
+                    </h4>
+                    <div id="summaryPaidList" class="space-y-4 flex-1">
+                      <!-- Dinámico -->
+                    </div>
+                  </div>
+
+                  <!-- Tarjeta 2: Pagos Pendientes -->
+                  <div class="bg-surface-900/20 border border-white/5 rounded-2xl p-5 flex flex-col">
+                    <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center justify-between gap-2">
+                      <span class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-orange-500"></span>
+                        Pagos Pendientes
+                      </span>
+                      <span id="summaryPendingTotal" class="text-xs font-black text-orange-400">$0,00</span>
+                    </h4>
+                    <div id="summaryPendingList" class="space-y-4 flex-1">
+                      <!-- Dinámico -->
+                    </div>
+                  </div>
+
+                  <!-- Tarjeta 3: Resumen del Balance del Torneo -->
+                  <div class="bg-surface-900/20 border border-white/5 rounded-2xl p-5 flex flex-col bg-gradient-to-br from-surface-850/30 to-surface-900/30">
+                    <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                      <span class="w-2 h-2 rounded-full bg-pitch-500"></span>
+                      Balance Proyectado
+                    </h4>
+                    <div id="summaryGeneralStats" class="space-y-4 flex-1">
+                      <!-- Dinámico -->
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        <!-- ── TAB: EQUIPOS ── -->
+        <section id="panel-equipos" class="tab-panel hidden animate-fade-up" role="tabpanel">
+          <div class="mb-5">
+            <p class="text-xs font-semibold text-pitch-400 uppercase tracking-widest mb-1">Gestión</p>
+            <h2 class="text-xl font-bold text-white">Los 10 equipos del torneo</h2>
+          </div>
+          <div id="teamsList" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div class="col-span-full text-center text-gray-600 py-8">Cargando equipos...</div>
+          </div>
+        </section>
+
+        <!-- ── TAB: FIXTURE ── -->
+        <section id="panel-fixture" class="tab-panel hidden animate-fade-up" role="tabpanel">
+
+          <!-- Phase selector -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 no-print">
+            <div id="fixturePhaseBadges" class="flex flex-wrap gap-2"></div>
+            <div class="flex items-center gap-3">
+              <button id="btnExportFixturePdf" type="button" class="btn-primary py-1.5 px-3 text-xs flex items-center gap-2 group">
+                <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
+                <span>Exportar Fixture</span>
+              </button>
+
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="fixtureEditToggle" class="sr-only peer">
+                <div
+                  class="w-11 h-6 bg-surface-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500">
+                </div>
+                <span class="ms-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Modo Edición</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Internal sub-nav -->
+          <div id="fixtureSubNav" class="flex gap-1 mb-5 bg-surface-850 rounded-xl p-1 border border-white/5 overflow-x-auto no-print">
+            <button id="fsub-t1" class="fixture-sub-btn active" data-fixture-sub="t1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+              Todos vs Todos
+            </button>
+            <button id="fsub-t2" class="fixture-sub-btn" data-fixture-sub="t2">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="9" stroke-width="2" />
+                <path stroke-linecap="round" stroke-width="2" d="M12 7v5l3 3" />
+              </svg>
+              Zonas (A y B)
+            </button>
+          </div>
+
+          <!-- Dynamic content -->
+          <div id="fixtureContent" class="space-y-5">
+            <div class="text-center text-gray-600 py-10">Cargando fixture...</div>
+          </div>
+
+        </section>
+
+        <!-- ── TAB: TORNEO ── -->
+        <section id="panel-torneo" class="tab-panel hidden animate-fade-up" role="tabpanel">
+          <div class="max-w-2xl mx-auto space-y-6">
+
+            <!-- Resumen del torneo -->
+            <div class="bg-surface-850 rounded-2xl border border-amber-500/15 p-6">
+              <div class="mb-5">
+                <p class="text-xs font-semibold text-amber-400 uppercase tracking-widest mb-1">Configuración</p>
+                <h2 class="text-xl font-bold text-white">Datos del torneo</h2>
+              </div>
+              <div id="tournamentFormError"
+                class="hidden mb-4 p-3 rounded-xl bg-red-950/60 border border-red-800/50 text-red-400 text-sm"></div>
+              <form id="tournamentForm" class="grid grid-cols-1 sm:grid-cols-2 gap-4" novalidate>
+                <div class="flex flex-col gap-1.5 sm:col-span-2">
+                  <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Nombre del torneo <span
+                      class="text-red-500">*</span></label>
+                  <input id="tournamentNameInput" name="name" type="text" placeholder="Ej: Apertura 2026" required
+                    class="form-input" />
+                </div>
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Presupuesto total <span
+                      class="text-red-500">*</span></label>
+                  <div class="relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-sm">$</span>
+                    <input id="tournamentBudgetInput" name="budgetAmount" type="number" min="0" step="0.01"
+                      placeholder="0,00" class="form-input pl-7" />
+                  </div>
+                  <p class="text-xs text-gray-600">Monto total esperado de cobros del torneo</p>
+                </div>
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Fecha de inicio</label>
+                  <input id="tournamentStartInput" name="startDate" type="date" class="form-input" />
+                </div>
+                <div class="flex flex-col gap-1.5 sm:col-span-2">
+                  <label class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Notas</label>
+                  <textarea id="tournamentNotesInput" name="notes" rows="3"
+                    placeholder="Observaciones generales del torneo" class="form-input resize-none"></textarea>
+                </div>
+                <div class="sm:col-span-2 flex items-center gap-3 pt-1">
+                  <button type="submit" class="btn-primary flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Guardar configuración
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Panel de KPIs del torneo -->
+            <div class="bg-surface-850 rounded-2xl border border-white/5 p-6">
+              <p class="text-xs font-semibold text-pitch-400 uppercase tracking-widest mb-4">Estado financiero del
+                torneo</p>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="flex flex-col gap-1 p-4 rounded-xl bg-surface-900 border border-white/5">
+                  <span class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Presupuesto</span>
+                  <strong id="t-budgetValue" class="text-xl font-extrabold text-amber-400">—</strong>
+                  <small class="text-xs text-gray-600">Meta total a cobrar</small>
+                </div>
+                <div class="flex flex-col gap-1 p-4 rounded-xl bg-surface-900 border border-white/5">
+                  <span class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Cobrado</span>
+                  <strong id="t-incomeValue" class="text-xl font-extrabold text-emerald-400">—</strong>
+                  <small class="text-xs text-gray-600">Total ingresado a caja</small>
+                </div>
+                <div class="flex flex-col gap-1 p-4 rounded-xl bg-surface-900 border border-white/5">
+                  <span class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Pagado</span>
+                  <strong id="t-expenseValue" class="text-xl font-extrabold text-red-400">—</strong>
+                  <small class="text-xs text-gray-600">Total egresado</small>
+                </div>
+                <div class="flex flex-col gap-1 p-4 rounded-xl bg-surface-900 border border-white/5">
+                  <span class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Falta cobrar</span>
+                  <strong id="t-pendingValue" class="text-xl font-extrabold text-orange-400">—</strong>
+                  <small class="text-xs text-gray-600">Presupuesto − cobrado</small>
+                </div>
+                <div class="flex flex-col gap-1 p-4 rounded-xl bg-surface-900 border border-white/5 sm:col-span-2">
+                  <div class="flex justify-between mb-2">
+                    <span class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Progreso de cobro</span>
+                    <span id="t-progressPct" class="text-xs font-bold text-emerald-400">0%</span>
+                  </div>
+                  <div class="bg-surface-800 rounded-full h-3 overflow-hidden">
+                    <div id="t-progressBar"
+                      class="h-3 rounded-full bg-gradient-to-r from-emerald-700 to-emerald-400 transition-all duration-700"
+                      style="width:0%"></div>
+                  </div>
+                  <small class="text-xs text-gray-600 mt-1">Porcentaje del presupuesto ya cobrado</small>
+                </div>
+              </div>
+            </div>
+        </section>
+
+        <!-- ── TAB: PLANTELES (LISTAS DE BUENA FE) ── -->
+        <section id="panel-planteles" class="tab-panel hidden animate-fade-up" role="tabpanel">
+
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold">Listas de Buena Fe</h2>
+            <div id="plantelesTeamSelector" class="flex flex-wrap gap-2">
+              <!-- Team badges rendered by JS -->
+            </div>
+          </div>
+
+          <!-- Empty State (No selec) -->
+          <div id="plantelesEmptyState" class="bg-surface-850 rounded-2xl border border-white/5 p-12 text-center">
+            <div
+              class="w-16 h-16 rounded-full bg-surface-800 flex items-center justify-center mx-auto mb-4 border border-white/5">
+              <svg class="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </div>
+            <p class="text-gray-400 font-medium">Seleccioná un equipo para ver su Lista de Buena Fe</p>
+          </div>
+
+          <!-- Active Team State -->
+          <div id="plantelesActiveState" class="hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+              <!-- Player List / Roster Table -->
+              <div class="lg:col-span-2 bg-surface-850 rounded-2xl border border-white/5 overflow-hidden flex flex-col">
+                <div class="px-6 py-4 border-b border-white/5 flex justify-between items-center bg-surface-900/50">
+                  <h3 class="font-bold text-white flex items-center gap-2">
+                    <span id="plantelesActiveTeamName" class="text-emerald-400">Club</span>
+                    <span class="text-xs text-gray-500 font-normal px-2 py-0.5 bg-surface-800 rounded-lg"
+                      id="plantelesPlayerCount">0 Jugadores</span>
+                  </h3>
+                </div>
+                <div class="overflow-x-auto">
+                  <table class="w-full text-left border-collapse">
+                    <thead>
+                      <tr class="text-xs text-gray-500 font-semibold uppercase tracking-wider bg-surface-900/30">
+                        <th class="py-3 px-4 w-16 text-center">#</th>
+                        <th class="py-3 px-4">Nombre Completo</th>
+                        <th class="py-3 px-4 w-32">DNI</th>
+                        <th class="py-3 px-4 w-32">Posición</th>
+                        <th class="py-3 px-4 w-20 text-center">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody id="plantelesTableBody" class="divide-y divide-white/5">
+                      <!-- Players rendered dynamically -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Add Player Form -->
+              <div class="bg-surface-850 rounded-2xl border border-white/5 p-6 h-fit">
+                <h3 class="font-bold mb-4 flex items-center gap-2 text-sm text-gray-300">
+                  <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                  </svg>
+                  Inscribir jugador
+                </h3>
+                <form id="addPlantelPlayerForm" class="flex flex-col gap-4">
+                  <input type="hidden" id="addPlantelTeamId" name="teamId" />
+
+                  <div class="flex gap-4">
+                    <div class="flex-1 flex flex-col gap-1.5">
+                      <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Nombre
+                        Completo</label>
+                      <input type="text" name="name" required placeholder="Ej. Juan Pérez" class="form-input" />
+                    </div>
+                    <div class="w-20 flex flex-col gap-1.5">
+                      <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Dorsal</label>
+                      <input type="number" name="number" placeholder="#" class="form-input text-center" />
+                    </div>
+                  </div>
+
+                  <div class="flex gap-4">
+                    <div class="flex-1 flex flex-col gap-1.5">
+                      <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">DNI</label>
+                      <input type="number" name="dni" placeholder="Sin puntos" class="form-input" />
+                    </div>
+                    <div class="flex-1 flex flex-col gap-1.5">
+                      <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Posición</label>
+                      <select name="position" class="form-input">
+                        <option value="Arquero">Arquero</option>
+                        <option value="Defensor">Defensor</option>
+                        <option value="Mediocampista">Mediocampista</option>
+                        <option value="Delantero" selected>Delantero</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <button type="submit" class="btn-primary mt-2 flex justify-center w-full">Agregar a Lista</button>
+                </form>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        <!-- ── TAB: ESTADISTICAS ── -->
+        <section id="panel-estadisticas" class="tab-panel hidden animate-fade-up" role="tabpanel">
+
+          <!-- Header de Estadísticas con Exportación -->
+          <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4 no-print">
+            <div class="flex items-center gap-3">
+              <h2 class="text-2xl font-black text-white tracking-tight flex items-center gap-3">
+                <span class="w-1.5 h-8 bg-emerald-500 rounded-full"></span>
+                Estadísticas
+              </h2>
+              <!-- Selector de Torneo -->
+              <div class="relative">
+                <select id="tournamentPhaseSelect"
+                  class="appearance-none pl-3 pr-8 py-1.5 bg-surface-900 border border-white/10 rounded-lg text-xs font-bold text-emerald-400 focus:outline-none focus:border-emerald-500/50 cursor-pointer tracking-wide uppercase">
+                  <!-- Options loaded dynamically -->
+                  <option value="">Cargando...</option>
+                </select>
+                <svg class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+            <button id="btnExportStatsPdf" class="btn-primary flex items-center gap-2 group">
+              <svg class="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor"
+                viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Generar Reporte Semanal
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 pb-8 no-print">
+
+            <!-- Posiciones — Apertura (todos_contra_todos) -->
+            <div id="statsStandingsContainer"
+              class="bg-surface-850 rounded-2xl border border-white/5 overflow-hidden shadow-xl">
+              <div class="p-4 border-b border-white/5 bg-surface-900/50 flex items-center justify-between flex-wrap gap-2">
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                  <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  Tabla de Posiciones General
+                </h3>
+                <div class="flex items-center gap-2">
+                  <input type="checkbox" id="statsSimulateDeduction" class="w-4 h-4 rounded bg-surface-900 border-white/10 text-emerald-500 focus:ring-emerald-500/20 focus:ring-offset-0 focus:ring-1 cursor-pointer" />
+                  <label for="statsSimulateDeduction" class="text-[10px] font-bold text-gray-400 cursor-pointer select-none uppercase tracking-wider">
+                    Simular quita de puntos
+                  </label>
+                </div>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-xs text-left standings-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Equipo</th>
+                      <th>PJ</th>
+                      <th>PG</th>
+                      <th>PE</th>
+                      <th>PP</th>
+                      <th>GF</th>
+                      <th>GC</th>
+                      <th>DIF</th>
+                      <th>PTS</th>
+                    </tr>
+                  </thead>
+                  <tbody id="statsStandingsTbody">
+                    <tr>
+                      <td colspan="10" class="p-8 text-center text-gray-600 italic">Cargando posiciones...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="px-4 py-2.5 border-t border-white/5 bg-surface-900/10">
+                <p class="text-[10px] text-red-400 font-medium leading-relaxed">
+                  <span class="font-bold">(*)</span> Equipos con sanción pendiente de cumplimiento, quedando sujetos a la quita de los puntos obtenidos entre la Fecha 1 y la Fecha 9 inclusive, conforme al reglamento vigente.
+                </p>
+              </div>
+            </div>
+
+            <!-- Posiciones — Torneo Corto (zonas A y B) [hidden by default] -->
+            <div id="statsZonesContainer" class="hidden flex flex-col gap-6">
+
+                <!-- Zona A -->
+                <div class="bg-surface-850 rounded-2xl border border-white/5 overflow-hidden shadow-xl">
+                  <div class="p-4 border-b border-white/5 bg-surface-900/50 flex items-center gap-3">
+                    <span class="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 font-black text-xs">A</span>
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest">Zona A</h3>
+                  </div>
+                  <div class="overflow-x-auto">
+                    <table class="w-full text-xs text-left standings-table">
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Equipo</th>
+                          <th>PJ</th>
+                          <th>PG</th>
+                          <th>PE</th>
+                          <th>PP</th>
+                          <th>GF</th>
+                          <th>GC</th>
+                          <th>DIF</th>
+                          <th>PTS</th>
+                        </tr>
+                      </thead>
+                      <tbody id="statsZoneATbody">
+                        <tr><td colspan="10" class="p-8 text-center text-gray-600 italic">Cargando...</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <!-- Zona B -->
+                <div class="bg-surface-850 rounded-2xl border border-white/5 overflow-hidden shadow-xl">
+                  <div class="p-4 border-b border-white/5 bg-surface-900/50 flex items-center gap-3">
+                    <span class="flex items-center justify-center w-6 h-6 rounded-full bg-sky-500/20 text-sky-400 font-black text-xs">B</span>
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest">Zona B</h3>
+                  </div>
+                  <div class="overflow-x-auto">
+                    <table class="w-full text-xs text-left standings-table">
+                      <thead>
+                        <tr>
+                          <th>#</th>
+                          <th>Equipo</th>
+                          <th>PJ</th>
+                          <th>PG</th>
+                          <th>PE</th>
+                          <th>PP</th>
+                          <th>GF</th>
+                          <th>GC</th>
+                          <th>DIF</th>
+                          <th>PTS</th>
+                        </tr>
+                      </thead>
+                      <tbody id="statsZoneBTbody">
+                        <tr><td colspan="10" class="p-8 text-center text-gray-600 italic">Cargando...</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+            </div>
+
+            <!-- Resultados por Fecha -->
+            <div id="statsResultsByDateContainer"
+              class="bg-surface-850 rounded-2xl border border-white/5 overflow-hidden shadow-xl flex flex-col">
+              <div class="p-4 border-b border-white/5 bg-surface-900/50 flex items-center justify-between">
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                  <svg class="w-4 h-4 text-pitch-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  Resultados por Fecha
+                </h3>
+                <select id="statsResultsRoundSelect"
+                  class="bg-surface-900 border border-white/10 rounded px-2 py-1 text-[10px] font-bold text-pitch-400 focus:outline-none focus:border-pitch-500/50 uppercase tracking-wider">
+                  <!-- Rounds populated dynamically -->
+                </select>
+              </div>
+              <div id="statsResultsContainerTbody" class="p-4 space-y-4">
+                <div class="text-center text-gray-600 italic py-8 text-xs">Selecciona una fecha para ver los resultados
+                </div>
+              </div>
+            </div>
+
+            <!-- Goleadores -->
+            <div id="statsScorersContainer"
+              class="bg-surface-850 rounded-2xl border border-white/5 overflow-hidden shadow-xl">
+              <div class="p-4 border-b border-white/5 bg-surface-900/50 flex items-center justify-between">
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                  <svg class="w-4 h-4 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="m11 11-4-2.5L5 11.5l3 3 4-2.5v-5l3.5-2L12 11Zm0 0 4-2.5 3 2.5-3 3-4-2.5Zm0 0v5l-3.5 1.5" />
+                  </svg>
+                  Goleadores
+                </h3>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-xs text-left">
+                  <thead>
+                    <tr class="text-gray-500 font-semibold uppercase tracking-wider bg-surface-900/30">
+                      <th class="py-3 px-4">Jugador</th>
+                      <th class="py-3 px-4 text-right">Goles</th>
+                    </tr>
+                  </thead>
+                  <tbody id="statsScorersTbody">
+                    <tr>
+                      <td colspan="2" class="p-8 text-center text-gray-600 italic">Cargando goleadores...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Tarjetas -->
+            <div id="statsCardsContainer"
+              class="bg-surface-850 rounded-2xl border border-white/5 overflow-hidden shadow-xl">
+              <div class="p-4 border-b border-white/5 bg-surface-900/50 flex items-center justify-between">
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                  <svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  Ranking Disciplinario
+                </h3>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-xs text-left">
+                  <thead>
+                    <tr class="text-gray-500 font-semibold uppercase tracking-wider bg-surface-900/30">
+                      <th class="py-3 px-4">Jugador</th>
+                      <th class="py-3 px-4 text-center">🟡 Amarillas</th>
+                      <th class="py-3 px-4 text-center">🔴 Rojas</th>
+                    </tr>
+                  </thead>
+                  <tbody id="statsCardsTbody" class="divide-y divide-white/5">
+                    <tr>
+                      <td colspan="3" class="p-8 text-center text-gray-600 italic">Cargando tarjetas...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Suspendidos -->
+            <div id="statsSuspendedContainer"
+              class="bg-surface-850 rounded-2xl border border-white/5 overflow-hidden shadow-xl xl:col-span-2">
+              <div class="p-4 border-b border-white/5 bg-surface-900/50 flex items-center justify-between">
+                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                  <span class="text-xl">⚠️</span>
+                  Jugadores Suspendidos
+                </h3>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-xs text-left">
+                  <thead>
+                    <tr class="text-gray-500 font-semibold uppercase tracking-wider bg-surface-900/30">
+                      <th class="py-3 px-4">Jugador</th>
+                      <th class="py-3 px-4 text-center">Sanción</th>
+                      <th class="py-3 px-4 text-center">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody id="statsSuspendedTbody" class="divide-y divide-white/5">
+                    <tr>
+                      <td colspan="3" class="p-8 text-center text-gray-600 italic">Cargando suspendidos...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+      </main>
+
+      <!-- FOOTER DEL MAIN AREA -->
+      <footer
+        class="flex-shrink-0 py-4 px-8 border-t border-white/5 text-[10px] uppercase tracking-widest text-gray-600 bg-surface-900 text-center">
+        Datos guardados en SQLite · <span id="footerTime"></span>
+      </footer>
+
+    </div> <!-- CLOSING DIV flex-1 MAIN CONTENT AREA -->
+  </div> <!-- CLOSING DIV flex h-screen -->
+
+  <!-- ── HISTORIAL JUGADOR MODAL ── -->
+  <div id="playerHistoryModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div id="playerHistoryModalBackdrop" class="absolute inset-0 bg-black/60 backdrop-blur-sm cursor-pointer"></div>
+    <div class="relative bg-surface-850 rounded-2xl border border-white/10 p-6 w-full max-w-lg shadow-2xl animate-fade-up flex flex-col max-h-[80vh]">
+      
+      <!-- Encabezado del Modal -->
+      <div class="flex items-center gap-4 mb-6">
+        <div id="phTeamShield" class="w-12 h-12 rounded-xl bg-surface-900 border border-white/5 flex items-center justify-center p-2 shadow-inner flex-shrink-0">
+           <!-- shield image here -->
+        </div>
+        <div>
+          <h3 id="phPlayerName" class="font-bold text-white text-lg leading-tight uppercase tracking-wide">Cargando...</h3>
+          <p id="phTeamName" class="text-xs text-gray-400 uppercase tracking-widest font-semibold mt-1">Cargando...</p>
+        </div>
+        <button type="button" id="closePlayerHistoryBtn" class="ml-auto text-gray-500 hover:text-white transition-colors p-2">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Contenido / Timeline -->
+      <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+        <div class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 flex items-center justify-between">
+          <span>Historial de Tarjetas</span>
+          <span id="phTotalCards" class="bg-surface-900/50 px-2 py-1 rounded text-gray-400">0</span>
+        </div>
+        
+        <div id="phTimelineContainer" class="space-y-4">
+          <!-- Timeline items rendered via JS -->
+          <div class="p-8 text-center text-gray-600 italic">Cargando historial...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── EDIT PLAYER MODAL ── -->
+  <div id="editPlayerModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div id="editPlayerModalBackdrop" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+    <div class="relative bg-surface-850 rounded-2xl border border-white/10 p-6 w-full max-w-md shadow-2xl animate-fade-up">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0">
+          <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          </svg>
+        </div>
+        <div>
+          <p class="font-bold text-white">Editar Jugador</p>
+          <p class="text-xs text-gray-400">Actualizá los datos personales y deportivos.</p>
+        </div>
+      </div>
+      
+      <form id="editPlayerForm" class="space-y-4">
+        <input type="hidden" id="editPlayerId" name="playerId">
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="flex flex-col gap-1.5 sm:col-span-2">
+            <label class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Nombre Completo</label>
+            <input type="text" id="editPlayerName" name="name" required class="form-input text-sm py-2.5" placeholder="Ej: Juan Pérez">
+          </div>
+          
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Número</label>
+            <input type="number" id="editPlayerNumber" name="number" min="1" max="99" class="form-input text-sm py-2.5" placeholder="1-99">
+          </div>
+          
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">DNI</label>
+            <input type="text" id="editPlayerDni" name="dni" class="form-input text-sm py-2.5" placeholder="Sin puntos">
+          </div>
+          
+          <div class="flex flex-col gap-1.5 sm:col-span-2">
+            <label class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Posición</label>
+            <select id="editPlayerPosition" name="position" class="form-input text-sm py-2.5">
+              <option value="Arquero">Arquero</option>
+              <option value="Defensor">Defensor</option>
+              <option value="Volante">Volante</option>
+              <option value="Delantero">Delantero</option>
+            </select>
+          </div>
+
+          <div class="flex flex-col gap-1.5 sm:col-span-2">
+            <label class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Equipo / Club</label>
+            <select id="editPlayerTeamId" name="teamId" class="form-input text-sm py-2.5">
+            </select>
+          </div>
+        </div>
+        
+        <div class="flex gap-2 pt-4">
+          <button id="editPlayerCancel" type="button" class="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-surface-800 text-gray-300 hover:bg-surface-700 transition-colors border border-white/5">Cancelar</button>
+          <button type="submit" class="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition-colors shadow-lg shadow-emerald-900/30">Guardar cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── MODAL REPORTE SEMANAL (PDF) ── -->
+  <div id="modalStatsPdf" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-sm"></div>
+    <div
+      class="relative bg-surface-900 border border-white/10 rounded-3xl p-8 w-full max-w-md shadow-2xl animate-fade-up">
+      <h3 class="text-xl font-bold text-white mb-2">Generar Reporte Semanal</h3>
+      <p class="text-gray-400 text-sm mb-6">Selecciona qué fecha del torneo deseas incluir en el reporte de resultados.
+      </p>
+
+      <label class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Número de Fecha</label>
+      <select id="selectReportFecha"
+        class="w-full bg-surface-800 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-emerald-500/50 outline-none transition-all mb-8">
+        <!-- Opciones dinámicas -->
+      </select>
+
+      <div class="flex gap-3">
+        <button id="btnCancelReport"
+          class="flex-1 px-6 py-3 rounded-xl border border-white/10 text-gray-400 font-bold hover:bg-white/5 transition-all text-sm">Cancelar</button>
+        <button id="btnGenerateReportPdf"
+          class="flex-1 px-6 py-3 rounded-xl bg-emerald-500 text-white font-bold hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/20 text-sm">Generar
+          PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CONTENEDOR DE IMPRESIÓN (OCULTO POR DEFECTO) ── -->
+  <div id="report-print-container" class="print-only"></div>
+
+</body>
+
+</html>
