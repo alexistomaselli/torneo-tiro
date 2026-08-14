@@ -1331,25 +1331,16 @@ window.selectPhase = function (phaseId) {
 function setFixtureTournamentIds() {
   const phase = fixture.phases.find(p => p.id === fixture.currentPhaseId);
   if (!phase) return;
-  const t1 = phase.tournaments.find(t => t.type === 'todos_contra_todos');
+  const t1 = phase.tournaments.find(t => t.type === 'todos_contra_todos' && !t.label.toLowerCase().includes('final'));
   const t2 = phase.tournaments.find(t => t.type === 'zonas');
+  const final = phase.tournaments.find(t => t.label.toLowerCase().includes('final'));
   fixture.t1Id = t1 ? t1.id : null;
   fixture.t2Id = t2 ? t2.id : null;
+  fixture.finalId = final ? final.id : null;
 
-  // Show or hide sub-navigation bar based on tournament availability
+  // Show sub-navigation bar
   if (els.fixtureSubNav) {
-    if (fixture.t1Id && fixture.t2Id) {
-      els.fixtureSubNav.classList.remove('hidden');
-    } else {
-      els.fixtureSubNav.classList.add('hidden');
-    }
-  }
-
-  // Auto-switch sub-tab based on availability
-  if (!fixture.t1Id && fixture.t2Id) {
-    fixture.currentSub = 't2';
-  } else if (fixture.t1Id && !fixture.t2Id) {
-    fixture.currentSub = 't1';
+    els.fixtureSubNav.classList.remove('hidden');
   }
 
   // Update active sub-button class
@@ -1417,6 +1408,77 @@ function renderDualStandingsHtml(standingsA, standingsB) {
   `;
 }
 
+function renderFinalsViewHtml(finalRounds, t2Rounds, allTeams, finalId) {
+  let html = '';
+
+  const phase = fixture.phases.find(p => p.id === fixture.currentPhaseId);
+  const phaseLabel = phase ? phase.label : 'Fase';
+
+  // 1. Gran Final de la Fase
+  html += `
+    <div class="bg-surface-850 rounded-2xl border border-white/5 overflow-hidden mb-6 p-6">
+      <div class="flex items-center gap-3 mb-4 pb-3 border-b border-white/5">
+        <span class="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 text-lg">🏆</span>
+        <div>
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider">Gran Final — ${escapeHTML(phaseLabel)}</h3>
+          <p class="text-xs text-gray-400">Encuentro decisivo entre el Ganador del Torneo Largo y el Ganador del Torneo Corto</p>
+        </div>
+      </div>
+  `;
+
+  const finalMatchList = (finalRounds && finalRounds.length > 0 && finalRounds[0].matches) ? finalRounds[0].matches : [];
+  if (finalMatchList.length > 0) {
+    html += `<div class="divide-y divide-white/5">${finalMatchList.map(m => renderMatchCard(m)).join('')}</div>`;
+    const playedFinal = finalMatchList.find(m => m.status === 'played');
+    if (playedFinal) {
+      const winnerName = playedFinal.homeGoals > playedFinal.awayGoals ? playedFinal.homeTeamName : (playedFinal.awayGoals > playedFinal.homeGoals ? playedFinal.awayTeamName : null);
+      if (winnerName) {
+        html += `
+          <div class="mt-4 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center animate-fade-up">
+            <span class="text-xs font-bold text-amber-400 uppercase tracking-widest block">🎉 CAMPEÓN ${escapeHTML(phaseLabel.toUpperCase())} 🎉</span>
+            <span class="text-xl font-extrabold text-white mt-1 block">${escapeHTML(winnerName.toUpperCase())}</span>
+          </div>
+        `;
+      }
+    }
+  } else {
+    html += `<p class="text-gray-500 text-xs italic py-4 text-center">Final programada al finalizar ambas competencias de la fase.</p>`;
+    if (finalId && fixture.editMode) {
+      html += `
+        <div class="p-4 bg-surface-900/30 border-t border-white/5 flex justify-center">
+          <button onclick="event.preventDefault(); event.stopPropagation(); addManualMatch(${finalId}, 1)" class="text-xs font-bold text-emerald-400 hover:text-emerald-300 uppercase tracking-widest flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Cargar Partido de Gran Final
+          </button>
+        </div>
+      `;
+    }
+  }
+  html += `</div>`;
+
+  // 2. Final del Torneo Corto (Zonas A y B)
+  html += `
+    <div class="bg-surface-850 rounded-2xl border border-white/5 overflow-hidden mb-6 p-6">
+      <div class="flex items-center gap-3 mb-4 pb-3 border-b border-white/5">
+        <span class="p-2 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/20 text-lg">🥇</span>
+        <div>
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider">Final Torneo Corto (Zonas A y B)</h3>
+          <p class="text-xs text-gray-400">Definición entre el 1° de la Zona A y el 1° de la Zona B</p>
+        </div>
+      </div>
+  `;
+
+  const round6 = t2Rounds ? t2Rounds.find(r => r.round === 6) : null;
+  if (round6 && round6.matches && round6.matches.length > 0) {
+    html += `<div class="divide-y divide-white/5">${round6.matches.map(m => renderMatchCard(m)).join('')}</div>`;
+  } else {
+    html += `<p class="text-gray-500 text-xs italic py-4 text-center">La final del torneo corto se disputará al finalizar la fase de grupos (Fecha 6).</p>`;
+  }
+  html += `</div>`;
+
+  return html;
+}
+
 async function renderFixtureContent() {
   const container = document.getElementById('fixtureContent');
   if (!container) return;
@@ -1428,22 +1490,24 @@ async function renderFixtureContent() {
   }
 
   const sub = fixture.currentSub;
-  let tournamentId = null;
-  const phase = fixture.phases.find(p => p.id === fixture.currentPhaseId);
-  if (phase) {
-    if (sub === 't1') {
-      tournamentId = phase.tournaments.find(t => t.type === 'todos_contra_todos')?.id;
-    } else {
-      tournamentId = phase.tournaments.find(t => t.type === 'zonas')?.id;
-    }
+
+  if (sub === 'final') {
+    const finalId = fixture.finalId;
+    const t2Id = fixture.t2Id;
+    const [finalRounds, t2Rounds, allTeams] = await Promise.all([
+      finalId ? fetchJSON(`/api/fixture/tournaments/${finalId}/matches`) : Promise.resolve([]),
+      t2Id ? fetchJSON(`/api/fixture/tournaments/${t2Id}/matches`) : Promise.resolve([]),
+      fetchJSON('/api/teams')
+    ]);
+    fixture.teams = allTeams;
+    container.innerHTML = renderFinalsViewHtml(finalRounds, t2Rounds, allTeams, finalId);
+    return;
   }
 
+  let tournamentId = sub === 't1' ? fixture.t1Id : fixture.t2Id;
+
   if (!tournamentId) {
-    if (sub === 't1') {
-      container.innerHTML = '<p class="text-gray-500 text-center py-6">Torneo Largo no disponible.</p>';
-    } else {
-      container.innerHTML = '<p class="text-gray-500 text-center py-6">Torneo Corto no disponible.</p>';
-    }
+    container.innerHTML = `<p class="text-gray-500 text-center py-6">${sub === 't1' ? 'Torneo Largo' : 'Torneo Corto'} no disponible.</p>`;
     return;
   }
 
