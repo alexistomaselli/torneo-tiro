@@ -66,6 +66,8 @@ function cacheElements() {
     'editPlayerModal', 'editPlayerModalBackdrop', 'editPlayerForm', 'editPlayerCancel',
     'editPlayerId', 'editPlayerTeamId', 'editPlayerName', 'editPlayerNumber',
     'editPlayerDni', 'editPlayerPosition',
+    // Jugadores Management View
+    'btnAddNewPlayer', 'playerSearchInput', 'playerTeamFilterSelect', 'playersManagementTbody', 'playerCountBadge',
     // Player History Modal
     'playerHistoryModal', 'playerHistoryModalBackdrop', 'closePlayerHistoryBtn',
     'phTeamShield', 'phPlayerName', 'phTeamName', 'phTotalCards', 'phTimelineContainer',
@@ -349,6 +351,8 @@ function switchTab(tabName) {
   // Specific view logic
   if (tabName === 'planteles') {
     renderPlantelesSelection();
+  } else if (tabName === 'jugadores') {
+    renderJugadoresView();
   } else if (tabName === 'historial' && state.currentHistorialSubtab === 'chart') {
     renderCategoryChart();
   }
@@ -645,6 +649,193 @@ function renderTeams() {
     els.teamsList.appendChild(card);
   });
 }
+
+/* ── JUGADORES MANAGEMENT VIEW ── */
+function normalizeSearchText(str) {
+  return String(str || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+}
+
+async function renderJugadoresView() {
+  const tbody = document.getElementById('playersManagementTbody');
+  if (!tbody) return;
+
+  const searchInput = document.getElementById('playerSearchInput');
+  if (searchInput && !searchInput.dataset.bound) {
+    searchInput.dataset.bound = 'true';
+    searchInput.addEventListener('input', (e) => {
+      state.playerSearchQuery = e.target.value;
+      filterAndRenderPlayers();
+    });
+  }
+
+  const filterSelect = document.getElementById('playerTeamFilterSelect');
+  if (filterSelect && !filterSelect.dataset.bound) {
+    filterSelect.dataset.bound = 'true';
+    filterSelect.addEventListener('change', (e) => {
+      state.playerTeamFilter = e.target.value;
+      filterAndRenderPlayers();
+    });
+  }
+
+  try {
+    const [playersRes, teamsRes] = await Promise.all([
+      fetch('/api/players'),
+      fetch('/api/teams')
+    ]);
+    state.allPlayersList = await playersRes.json();
+    state.allTeamsList = await teamsRes.json();
+    state.teams = state.allTeamsList;
+
+    if (filterSelect) {
+      filterSelect.innerHTML = '<option value="all">Todos los Clubes</option>';
+      state.allTeamsList.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.id;
+        opt.textContent = t.name;
+        filterSelect.appendChild(opt);
+      });
+      filterSelect.value = state.playerTeamFilter || 'all';
+    }
+
+    filterAndRenderPlayers();
+  } catch (err) {
+    console.error('Error al cargar padrón de jugadores:', err);
+    tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-red-400">Error al cargar padrón de jugadores</td></tr>';
+  }
+}
+
+function filterAndRenderPlayers() {
+  const tbody = document.getElementById('playersManagementTbody');
+  const badge = document.getElementById('playerCountBadge');
+  if (!tbody) return;
+
+  let filtered = state.allPlayersList || [];
+  const searchInput = document.getElementById('playerSearchInput');
+  const query = searchInput ? normalizeSearchText(searchInput.value) : normalizeSearchText(state.playerSearchQuery);
+  const teamFilter = state.playerTeamFilter || 'all';
+
+  if (teamFilter !== 'all') {
+    filtered = filtered.filter(p => String(p.teamId) === String(teamFilter));
+  }
+
+  if (query) {
+    filtered = filtered.filter(p =>
+      normalizeSearchText(p.name).includes(query) ||
+      normalizeSearchText(p.dni).includes(query) ||
+      normalizeSearchText(p.teamName).includes(query)
+    );
+  }
+
+  if (badge) {
+    badge.textContent = `${filtered.length} ${filtered.length === 1 ? 'jugador' : 'jugadores'}`;
+  }
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-gray-500 italic">No se encontraron jugadores con los filtros seleccionados</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtered.map((p, idx) => {
+    const jsonEncoded = encodeURIComponent(JSON.stringify(p));
+    return `
+      <tr class="hover:bg-white/5 transition-colors border-b border-white/5 group">
+        <td class="py-3 px-4 font-bold text-gray-600 group-hover:text-gray-400 transition-colors text-xs">${idx + 1}</td>
+        <td class="py-3 px-4 font-bold text-gray-100 text-sm">
+          <div class="flex items-center gap-2">
+            <span>${escapeHTML(p.name)}</span>
+            ${!p.isActive ? '<span class="text-[9px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 font-bold border border-red-500/20">Inactivo</span>' : ''}
+          </div>
+        </td>
+        <td class="py-3 px-4 font-mono text-gray-400 text-xs">${p.dni ? escapeHTML(p.dni) : '<span class="text-gray-700 italic">-</span>'}</td>
+        <td class="py-3 px-4">
+          <div class="flex items-center gap-2">
+            <div class="w-6 h-6 rounded bg-surface-900 border border-white/5 p-1 flex-shrink-0 flex items-center justify-center">
+              ${p.teamShield ? `<img src="${escapeAttr(p.teamShield)}" class="w-full h-full object-contain" />` : '<span class="text-[9px] text-gray-700">?</span>'}
+            </div>
+            <select onchange="quickTransferPlayer(${p.id}, this.value)" class="bg-surface-900 border border-white/10 hover:border-pitch-500/40 text-amber-300 font-bold text-xs rounded-lg px-2 py-1 cursor-pointer focus:outline-none transition-colors">
+              ${state.allTeamsList.map(t => `<option value="${t.id}" ${t.id === p.teamId ? 'selected' : ''}>${escapeHTML(t.name)}</option>`).join('')}
+            </select>
+          </div>
+        </td>
+        <td class="py-3 px-4 text-center font-mono font-bold text-gray-300">${p.number ? `#${p.number}` : '<span class="text-gray-700 italic">-</span>'}</td>
+        <td class="py-3 px-4 text-gray-400 font-medium">${p.position ? escapeHTML(p.position) : '<span class="text-gray-700 italic">-</span>'}</td>
+        <td class="py-3 px-4 text-right">
+          <div class="flex items-center justify-end gap-2">
+            <button type="button" onclick="openEditPlayerModal('${jsonEncoded}', ${p.teamId})" title="Editar Jugador" class="p-1.5 rounded-lg bg-surface-800 hover:bg-emerald-500/20 text-gray-400 hover:text-emerald-400 border border-white/5 transition-colors cursor-pointer">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+            </button>
+            <button type="button" onclick="deletePlayerGlobal(${p.id}, '${escapeAttr(p.name)}')" title="Eliminar Jugador" class="p-1.5 rounded-lg bg-surface-800 hover:bg-red-500/20 text-gray-400 hover:text-red-400 border border-white/5 transition-colors cursor-pointer">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+async function quickTransferPlayer(playerId, newTeamId) {
+  const p = (state.allPlayersList || []).find(x => x.id === playerId);
+  if (!p) return;
+  const newTeam = (state.allTeamsList || []).find(t => String(t.id) === String(newTeamId));
+  const newTeamName = newTeam ? newTeam.name : 'nuevo equipo';
+
+  try {
+    await fetchJSON(`/api/players/${playerId}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        teamId: Number(newTeamId),
+        name: p.name,
+        number: p.number,
+        dni: p.dni,
+        position: p.position || 'Delantero',
+        isActive: 1
+      })
+    });
+    showToast(`Jugador "${p.name}" transferido a ${newTeamName}`, 'success');
+    renderJugadoresView();
+  } catch (err) {
+    console.error(err);
+    showToast('Error al reasignar equipo al jugador', 'error');
+  }
+}
+
+async function deletePlayerGlobal(playerId, playerName) {
+  if (!confirm(`¿Seguro querés eliminar al jugador "${playerName}"?`)) return;
+  try {
+    await fetchJSON(`/api/players/${playerId}`, { method: 'DELETE' });
+    showToast('Jugador eliminado correctamente', 'success');
+    renderJugadoresView();
+  } catch (err) {
+    showToast('Error al eliminar jugador', 'error');
+  }
+}
+
+function openCreatePlayerModal() {
+  if (!els.editPlayerModal) return;
+  els.editPlayerId.value = '';
+  
+  if (els.editPlayerTeamId) {
+    const sortedTeams = (state.allTeamsList || state.teams || []).slice().sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    els.editPlayerTeamId.innerHTML = sortedTeams.map(t => `<option value="${t.id}">${escapeHTML(t.name)}</option>`).join('');
+  }
+  
+  els.editPlayerName.value = '';
+  els.editPlayerNumber.value = '';
+  els.editPlayerDni.value = '';
+  els.editPlayerPosition.value = 'Delantero';
+
+  const modalTitle = els.editPlayerModal.querySelector('p.font-bold');
+  if (modalTitle) modalTitle.textContent = 'Registrar Nuevo Jugador';
+
+  els.editPlayerModal.classList.remove('hidden');
+}
+
+window.renderJugadoresView = renderJugadoresView;
+window.filterAndRenderPlayers = filterAndRenderPlayers;
+window.quickTransferPlayer = quickTransferPlayer;
+window.deletePlayerGlobal = deletePlayerGlobal;
+window.openCreatePlayerModal = openCreatePlayerModal;
 
 /* ── RENDER PLANTELES (LISTAS DE BUENA FE) ── */
 let currentPlantelTeamId = null;

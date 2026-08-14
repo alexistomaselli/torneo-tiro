@@ -340,7 +340,13 @@ async function handleApi(req, res, url) {
 
   // GET /api/players (all)
   if (req.method === 'GET' && url.pathname === '/api/players') {
-    const players = db.prepare('SELECT id, team_id AS teamId, name, number, position FROM players').all().map(mapPlainObject);
+    const players = db.prepare(`
+      SELECT p.id, p.team_id AS teamId, p.name, p.number, p.dni, p.position, p.is_active AS isActive,
+             t.name AS teamName, t.shield_url AS teamShield
+      FROM players p
+      LEFT JOIN teams t ON t.id = p.team_id
+      ORDER BY COALESCE(t.name, 'ZZZ') ASC, p.name ASC
+    `).all().map(mapPlainObject);
     sendJson(res, 200, players);
     return;
   }

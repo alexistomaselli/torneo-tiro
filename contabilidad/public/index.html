@@ -112,6 +112,13 @@
               </svg>
               <span>Listas de Buena Fe</span>
             </button>
+            <button role="tab" data-tab="jugadores" class="sidebar-btn" id="tab-jugadores">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              <span>Jugadores (Gestión)</span>
+            </button>
             <button role="tab" data-tab="fixture" class="sidebar-btn" id="tab-fixture">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -1067,6 +1074,72 @@
                   <tbody id="statsSuspendedTbody" class="divide-y divide-white/5">
                     <tr>
                       <td colspan="3" class="p-8 text-center text-gray-600 italic">Cargando suspendidos...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ── TAB: JUGADORES (GESTIÓN GENERAL) ── -->
+        <section id="panel-jugadores" class="tab-panel hidden animate-fade-up" role="tabpanel">
+          <div class="space-y-6">
+
+            <!-- Header Bar -->
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-surface-850 p-6 rounded-2xl border border-white/5 shadow-xl">
+              <div>
+                <span class="text-xs font-bold text-emerald-400 uppercase tracking-widest block mb-1">Padrón de Jugadores</span>
+                <h2 class="text-xl font-extrabold text-white flex items-center gap-2">
+                  Gestión General de Jugadores
+                  <span id="playerCountBadge" class="text-xs font-black px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">0 jugadores</span>
+                </h2>
+                <p class="text-xs text-gray-400 mt-1">Busca, edita y reasigna jugadores entre los diferentes clubes del torneo.</p>
+              </div>
+              <button id="btnAddNewPlayer" type="button" class="btn-primary flex items-center gap-2 text-xs py-2 px-4 font-bold shadow-lg cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                + Registrar Nuevo Jugador
+              </button>
+            </div>
+
+            <!-- Controls: Search & Team Filter -->
+            <div class="bg-surface-850 p-4 rounded-2xl border border-white/5 flex flex-col md:flex-row items-center gap-4">
+              <!-- Search Bar -->
+              <div class="relative flex-1 w-full">
+                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-500">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                </div>
+                <input id="playerSearchInput" type="text" placeholder="Buscar por nombre de jugador, DNI o club..." class="form-input pl-10 text-xs py-2 w-full" />
+              </div>
+
+              <!-- Team Filter -->
+              <div class="flex items-center gap-2 w-full md:w-auto">
+                <label class="text-xs font-bold text-gray-400 whitespace-nowrap uppercase tracking-wider">Club:</label>
+                <select id="playerTeamFilterSelect" class="form-input text-xs py-2 px-3 bg-surface-900 border-white/10 text-white rounded-xl focus:border-pitch-500 cursor-pointer min-w-[200px]">
+                  <option value="all">Todos los Clubes</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Table Container -->
+            <div class="bg-surface-850 rounded-2xl border border-white/5 overflow-hidden shadow-xl">
+              <div class="overflow-x-auto">
+                <table class="w-full text-xs text-left">
+                  <thead>
+                    <tr class="text-gray-400 font-bold uppercase tracking-wider bg-surface-900/60 border-b border-white/5">
+                      <th class="py-3 px-4 w-12">#</th>
+                      <th class="py-3 px-4">Jugador</th>
+                      <th class="py-3 px-4">DNI</th>
+                      <th class="py-3 px-4">Club Actual</th>
+                      <th class="py-3 px-4 text-center">N° Camiseta</th>
+                      <th class="py-3 px-4">Posición</th>
+                      <th class="py-3 px-4 text-right">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="playersManagementTbody" class="divide-y divide-white/5">
+                    <tr>
+                      <td colspan="7" class="p-8 text-center text-gray-500 italic animate-pulse">Cargando padrón de jugadores...</td>
                     </tr>
                   </tbody>
                 </table>
