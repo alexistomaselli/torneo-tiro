@@ -109,6 +109,7 @@ function bindEvents() {
     els.globalPhaseSelect.value = state.selectedPhaseId || '3';
     els.globalPhaseSelect.addEventListener('change', (e) => {
       state.selectedPhaseId = e.target.value;
+      state.phasesLoaded = false;
       if (state.selectedPhaseId !== 'all') {
         fixture.currentPhaseId = Number(state.selectedPhaseId);
       }
@@ -2890,14 +2891,22 @@ async function loadTournamentPhases() {
   try {
     const res = await fetch('/api/phases');
     if (!res.ok) throw new Error('Error al cargar fases');
-    const phases = await res.json();
+    const allPhases = await res.json();
+    const selectedPhaseId = state.selectedPhaseId || '3';
+    let phases = allPhases;
+    if (selectedPhaseId !== 'all') {
+      phases = allPhases.filter(p => String(p.phaseId) === String(selectedPhaseId));
+    }
+
     if (els.tournamentPhaseSelect) {
       els.tournamentPhaseSelect.innerHTML = '';
       
       const optAll = document.createElement('option');
       optAll.value = 'all';
       optAll.dataset.type = 'global';
-      optAll.textContent = 'Acumulado General (Todo)';
+      optAll.textContent = selectedPhaseId === '1'
+        ? 'Acumulado General — Apertura 2026'
+        : (selectedPhaseId === '3' ? 'Acumulado General — Clausura 2026' : 'Acumulado Anual (Todo)');
       els.tournamentPhaseSelect.appendChild(optAll);
 
       phases.forEach(p => {
@@ -2908,9 +2917,13 @@ async function loadTournamentPhases() {
         els.tournamentPhaseSelect.appendChild(opt);
       });
       state.phasesLoaded = true;
+
       if (phases.length > 0) {
-        state.currentTournamentId = phases[0].phaseTournamentId;
-        state.currentTournamentType = phases[0].type;
+        const isValid = phases.some(p => String(p.phaseTournamentId) === String(state.currentTournamentId));
+        if (!isValid && state.currentTournamentId !== 'all') {
+          state.currentTournamentId = phases[0].phaseTournamentId;
+          state.currentTournamentType = phases[0].type;
+        }
         els.tournamentPhaseSelect.value = state.currentTournamentId;
       }
     }
@@ -2979,13 +2992,16 @@ async function renderEstadisticas() {
     }
 
     const simulateDeduction = els.statsSimulateDeduction && els.statsSimulateDeduction.checked;
-    const phaseParam = state.selectedPhaseId || '3';
+    const tId = state.currentTournamentId;
+    const statsQuery = (tId === 'all' || !tId)
+      ? (state.selectedPhaseId === 'all' ? 'phaseId=all' : `phaseId=${state.selectedPhaseId || '1'}`)
+      : `tournamentId=${tId}`;
 
-    // Parallel API requests filtering by selected phaseId
+    // Parallel API requests filtering by selected tournamentId/phaseId
     const [scorersRes, cardsRes, suspendedRes] = await Promise.all([
-      fetch(`/api/stats/scorers?phaseId=${phaseParam}`),
-      fetch(`/api/stats/cards?phaseId=${phaseParam}`),
-      fetch(`/api/stats/suspended?phaseId=${phaseParam}`)
+      fetch(`/api/stats/scorers?${statsQuery}`),
+      fetch(`/api/stats/cards?${statsQuery}`),
+      fetch(`/api/stats/suspended?${statsQuery}`)
     ]);
 
     const scorers = await scorersRes.json();
