@@ -109,7 +109,16 @@ function bindEvents() {
     els.globalPhaseSelect.value = state.selectedPhaseId || '3';
     els.globalPhaseSelect.addEventListener('change', (e) => {
       state.selectedPhaseId = e.target.value;
-      state.phasesLoaded = false;
+      if (state.selectedPhaseId === '1') {
+        state.currentTournamentId = 1;
+      } else if (state.selectedPhaseId === '3') {
+        state.currentTournamentId = 4;
+      } else if (state.selectedPhaseId === 'all') {
+        state.currentTournamentId = 'all';
+      }
+      if (els.tournamentPhaseSelect) {
+        els.tournamentPhaseSelect.value = state.currentTournamentId;
+      }
       if (state.selectedPhaseId !== 'all') {
         fixture.currentPhaseId = Number(state.selectedPhaseId);
       }
@@ -164,7 +173,7 @@ function bindEvents() {
     els.tournamentPhaseSelect.addEventListener('change', (e) => {
       const selectedOpt = e.target.options[e.target.selectedIndex];
       if (!selectedOpt) return;
-      state.currentTournamentId = Number(e.target.value);
+      state.currentTournamentId = e.target.value === 'all' ? 'all' : Number(e.target.value);
       state.currentTournamentType = selectedOpt.dataset.type;
 
       // Reset round select to force regeneration for the new tournament
@@ -2892,40 +2901,38 @@ async function loadTournamentPhases() {
     const res = await fetch('/api/phases');
     if (!res.ok) throw new Error('Error al cargar fases');
     const allPhases = await res.json();
-    const selectedPhaseId = state.selectedPhaseId || '3';
-    let phases = allPhases;
-    if (selectedPhaseId !== 'all') {
-      phases = allPhases.filter(p => String(p.phaseId) === String(selectedPhaseId));
-    }
+    const mainTournaments = allPhases.filter(p => !p.ptLabel.toLowerCase().includes('final'));
 
     if (els.tournamentPhaseSelect) {
       els.tournamentPhaseSelect.innerHTML = '';
-      
-      const optAll = document.createElement('option');
-      optAll.value = 'all';
-      optAll.dataset.type = 'global';
-      optAll.textContent = selectedPhaseId === '1'
-        ? 'Acumulado General — Apertura 2026'
-        : (selectedPhaseId === '3' ? 'Acumulado General — Clausura 2026' : 'Acumulado Anual (Todo)');
-      els.tournamentPhaseSelect.appendChild(optAll);
 
-      phases.forEach(p => {
+      mainTournaments.forEach(p => {
         const opt = document.createElement('option');
         opt.value = p.phaseTournamentId;
         opt.dataset.type = p.type;
-        opt.textContent = `${p.phaseLabel} — ${p.ptLabel}`;
+
+        let cleanLabel = p.ptLabel;
+        if (p.phaseId === 1 && p.type === 'todos_contra_todos') cleanLabel = 'Torneo Largo Apertura';
+        else if (p.phaseId === 1 && p.type === 'zonas') cleanLabel = 'Torneo Corto Apertura';
+        else if (p.phaseId === 3 && p.type === 'todos_contra_todos') cleanLabel = 'Torneo Largo Clausura';
+        else if (p.phaseId === 3 && p.type === 'zonas') cleanLabel = 'Torneo Corto Clausura';
+
+        opt.textContent = cleanLabel;
         els.tournamentPhaseSelect.appendChild(opt);
       });
+
+      const optAll = document.createElement('option');
+      optAll.value = 'all';
+      optAll.dataset.type = 'global';
+      optAll.textContent = 'Acumulado General (Anual)';
+      els.tournamentPhaseSelect.appendChild(optAll);
+
       state.phasesLoaded = true;
 
-      if (phases.length > 0) {
-        const isValid = phases.some(p => String(p.phaseTournamentId) === String(state.currentTournamentId));
-        if (!isValid && state.currentTournamentId !== 'all') {
-          state.currentTournamentId = phases[0].phaseTournamentId;
-          state.currentTournamentType = phases[0].type;
-        }
-        els.tournamentPhaseSelect.value = state.currentTournamentId;
+      if (!state.currentTournamentId || state.currentTournamentId === 'all') {
+        state.currentTournamentId = 4; // Default to Torneo Largo Clausura or 1
       }
+      els.tournamentPhaseSelect.value = state.currentTournamentId;
     }
   } catch (err) {
     console.error('Error al obtener fases de torneo:', err);
