@@ -2901,21 +2901,22 @@ async function loadTournamentPhases() {
     const res = await fetch('/api/phases');
     if (!res.ok) throw new Error('Error al cargar fases');
     const allPhases = await res.json();
-    const mainTournaments = allPhases.filter(p => !p.ptLabel.toLowerCase().includes('final'));
 
     if (els.tournamentPhaseSelect) {
       els.tournamentPhaseSelect.innerHTML = '';
 
-      mainTournaments.forEach(p => {
+      allPhases.forEach(p => {
         const opt = document.createElement('option');
         opt.value = p.phaseTournamentId;
         opt.dataset.type = p.type;
 
         let cleanLabel = p.ptLabel;
-        if (p.phaseId === 1 && p.type === 'todos_contra_todos') cleanLabel = 'Torneo Largo Apertura';
+        if (p.phaseId === 1 && p.type === 'todos_contra_todos' && !p.ptLabel.toLowerCase().includes('final')) cleanLabel = 'Torneo Largo Apertura';
         else if (p.phaseId === 1 && p.type === 'zonas') cleanLabel = 'Torneo Corto Apertura';
-        else if (p.phaseId === 3 && p.type === 'todos_contra_todos') cleanLabel = 'Torneo Largo Clausura';
+        else if (p.phaseId === 1 && p.ptLabel.toLowerCase().includes('final')) cleanLabel = '🏆 Gran Final Apertura';
+        else if (p.phaseId === 3 && p.type === 'todos_contra_todos' && !p.ptLabel.toLowerCase().includes('final')) cleanLabel = 'Torneo Largo Clausura';
         else if (p.phaseId === 3 && p.type === 'zonas') cleanLabel = 'Torneo Corto Clausura';
+        else if (p.phaseId === 3 && p.ptLabel.toLowerCase().includes('final')) cleanLabel = '🏆 Gran Final Clausura';
 
         opt.textContent = cleanLabel;
         els.tournamentPhaseSelect.appendChild(opt);
@@ -2930,7 +2931,7 @@ async function loadTournamentPhases() {
       state.phasesLoaded = true;
 
       if (!state.currentTournamentId || state.currentTournamentId === 'all') {
-        state.currentTournamentId = 4; // Default to Torneo Largo Clausura or 1
+        state.currentTournamentId = 4;
       }
       els.tournamentPhaseSelect.value = state.currentTournamentId;
     }
@@ -2973,12 +2974,24 @@ async function renderEstadisticas() {
       if (els.statsResultsRoundSelect && (els.statsResultsRoundSelect.options.length === 0 || els.statsResultsRoundSelect.dataset.lastTournamentId !== String(state.currentTournamentId))) {
         els.statsResultsRoundSelect.innerHTML = '';
         els.statsResultsRoundSelect.dataset.lastTournamentId = state.currentTournamentId;
-        // Find max round from fixture based on tournament type
-        const rounds = state.currentTournamentType === 'zonas' ? 5 : 15;
-        for (let i = 1; i <= rounds; i++) {
+        
+        let roundsCount = 11;
+        if (state.currentTournamentType === 'zonas') {
+          roundsCount = 6;
+        } else if (state.currentTournamentId === 6 || state.currentTournamentId === 7) {
+          roundsCount = 1;
+        }
+
+        for (let i = 1; i <= roundsCount; i++) {
           const opt = document.createElement('option');
           opt.value = i;
-          opt.textContent = `Fecha ${i}`;
+          if (state.currentTournamentType === 'zonas' && i === 6) {
+            opt.textContent = `🏆 Fecha 6 — Final Torneo Corto`;
+          } else if (state.currentTournamentId === 6 || state.currentTournamentId === 7) {
+            opt.textContent = `🏆 Gran Final`;
+          } else {
+            opt.textContent = `Fecha ${i}`;
+          }
           els.statsResultsRoundSelect.appendChild(opt);
         }
 

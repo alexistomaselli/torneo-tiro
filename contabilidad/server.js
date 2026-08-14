@@ -1555,7 +1555,7 @@ function getMatchGoalsReport(matchId) {
 function getRoundResults(tournamentId, round) {
   const matches = db.prepare(`
     SELECT m.id, m.round_number AS roundNumber, m.home_team_id AS homeTeamId, m.away_team_id AS awayTeamId,
-           m.home_goals AS homeScore, m.away_goals AS awayScore, m.status,
+           m.home_goals AS homeScore, m.away_goals AS awayScore, m.status, m.penalties_info AS penaltiesInfo,
            ht.name AS homeTeamName, ht.shield_url AS homeTeamShield,
            at.name AS awayTeamName, at.shield_url AS awayTeamShield
     FROM matches m
