@@ -623,7 +623,7 @@ function renderTeams() {
         <div class="flex items-center gap-2 my-1">
           <input type="checkbox" id="pointsDeduction-${team.id}" name="pointsDeduction" ${team.pointsDeduction ? 'checked' : ''} class="w-4 h-4 rounded bg-surface-900 border-white/10 text-emerald-500 focus:ring-emerald-500/20 focus:ring-offset-0 focus:ring-1 cursor-pointer" />
           <label for="pointsDeduction-${team.id}" class="text-xs font-semibold text-red-400/90 cursor-pointer select-none">
-            Sancionar equipo (F1 a F9)
+            Sancionar equipo (F1 a F9 — Solo Apertura)
           </label>
         </div>
         <div class="flex justify-end">

@@ -870,6 +870,9 @@ function generateT2Matches(groupTeams, phaseTournamentId, now) {
 }
 
 function computeStandings(phaseTournamentId, groupName = null, simulateDeduction = false) {
+  const ptRow = db.prepare('SELECT phase_id FROM phase_tournaments WHERE id = ?').get(phaseTournamentId);
+  const isApertura = ptRow ? ptRow.phase_id === 1 : false;
+
   let teams;
   if (groupName) {
     const rows = db.prepare(`
@@ -883,6 +886,13 @@ function computeStandings(phaseTournamentId, groupName = null, simulateDeduction
   }
 
   if (!teams.length) return [];
+
+  // Sanctions (pointsDeduction) only apply to Apertura (phase_id = 1)
+  for (const t of teams) {
+    if (!isApertura) {
+      t.pointsDeduction = 0;
+    }
+  }
 
   const teamIdSet = new Set(teams.map(t => t.id));
   const playedMatches = db.prepare(`
@@ -899,7 +909,7 @@ function computeStandings(phaseTournamentId, groupName = null, simulateDeduction
       slotNumber: t.slotNumber, 
       name: t.name, 
       shieldUrl: t.shieldUrl, 
-      pointsDeduction: t.pointsDeduction || 0,
+      pointsDeduction: isApertura ? (t.pointsDeduction || 0) : 0,
       played: 0, 
       won: 0, 
       draw: 0, 
