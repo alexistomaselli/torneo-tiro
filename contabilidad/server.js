@@ -454,18 +454,16 @@ async function handleApi(req, res, url) {
 }
 
 function getSummary(phaseParam = null) {
-  const row = db.prepare(`
+  // 1. Real Continuous Cash Balance (All time)
+  const globalRow = db.prepare(`
     SELECT
-      COALESCE(SUM(CASE WHEN type = 'income' THEN amount_cents ELSE 0 END), 0) AS incomeCents,
-      COALESCE(SUM(CASE WHEN type = 'expense' THEN amount_cents ELSE 0 END), 0) AS expenseCents,
-      COUNT(*) AS movementCount
+      COALESCE(SUM(CASE WHEN type = 'income' THEN amount_cents ELSE 0 END), 0) AS globalIncome,
+      COALESCE(SUM(CASE WHEN type = 'expense' THEN amount_cents ELSE 0 END), 0) AS globalExpense
     FROM movements
   `).get();
+  const balanceCents = Number(globalRow.globalIncome || 0) - Number(globalRow.globalExpense || 0);
 
-  const incomeCents = Number(row.incomeCents || 0);
-  const expenseCents = Number(row.expenseCents || 0);
-  const balanceCents = incomeCents - expenseCents;
-
+  // 2. Determine phase filter & tournament ID
   let tournamentId = 2; // Default to Clausura
   if (phaseParam === '1' || phaseParam === 'apertura') {
     tournamentId = 1;
@@ -475,27 +473,35 @@ function getSummary(phaseParam = null) {
     tournamentId = 'all';
   }
 
-  let tournament;
-  let phaseIncomeCents = 0;
+  // 3. Filtered Cobrado (Income), Pagado (Expense), and Movimientos (Count) by Phase Date Range
+  let dateFilterWhere = '';
+  if (tournamentId === 1) {
+    dateFilterWhere = ` WHERE occurred_on <= '2026-07-31'`;
+  } else if (tournamentId === 2) {
+    dateFilterWhere = ` WHERE occurred_on >= '2026-08-01'`;
+  }
 
+  const phaseStatsRow = db.prepare(`
+    SELECT
+      COALESCE(SUM(CASE WHEN type = 'income' THEN amount_cents ELSE 0 END), 0) AS incomeCents,
+      COALESCE(SUM(CASE WHEN type = 'expense' THEN amount_cents ELSE 0 END), 0) AS expenseCents,
+      COALESCE(SUM(CASE WHEN type = 'income' AND category = 'Inscripción' THEN amount_cents ELSE 0 END), 0) AS inscriptionIncomeCents,
+      COUNT(*) AS movementCount
+    FROM movements
+    ${dateFilterWhere}
+  `).get();
+
+  const incomeCents = Number(phaseStatsRow.incomeCents || 0);
+  const expenseCents = Number(phaseStatsRow.expenseCents || 0);
+  const phaseInscriptionIncomeCents = Number(phaseStatsRow.inscriptionIncomeCents || 0);
+  const movementCount = Number(phaseStatsRow.movementCount || 0);
+
+  let tournament;
   if (tournamentId === 1) {
     tournament = getTournament(1);
-    const incRow = db.prepare(`
-      SELECT COALESCE(SUM(amount_cents), 0) AS inc
-      FROM movements
-      WHERE type = 'income' AND category = 'Inscripción' AND occurred_on <= '2026-07-31'
-    `).get();
-    phaseIncomeCents = Number(incRow.inc || 0);
   } else if (tournamentId === 2) {
     tournament = getTournament(2);
-    const incRow = db.prepare(`
-      SELECT COALESCE(SUM(amount_cents), 0) AS inc
-      FROM movements
-      WHERE type = 'income' AND category = 'Inscripción' AND occurred_on >= '2026-08-01'
-    `).get();
-    phaseIncomeCents = Number(incRow.inc || 0);
   } else {
-    // All / Anual
     const t1 = getTournament(1);
     const t2 = getTournament(2);
     tournament = {
@@ -506,29 +512,23 @@ function getSummary(phaseParam = null) {
       endDate: t2.endDate,
       notes: 'Presupuesto total anual sumando Apertura y Clausura.'
     };
-    const incRow = db.prepare(`
-      SELECT COALESCE(SUM(amount_cents), 0) AS inc
-      FROM movements
-      WHERE type = 'income' AND category = 'Inscripción'
-    `).get();
-    phaseIncomeCents = Number(incRow.inc || 0);
   }
 
   const budgetCents = Number(tournament.budgetCents || 0);
-  const pendingCollectionCents = Math.max(0, budgetCents - phaseIncomeCents);
-  const collectionProgressPct = budgetCents > 0 ? Math.min(100, Math.round((phaseIncomeCents / budgetCents) * 100)) : null;
-  const budgetBalanceCents = phaseIncomeCents - expenseCents - budgetCents;
+  const pendingCollectionCents = Math.max(0, budgetCents - phaseInscriptionIncomeCents);
+  const collectionProgressPct = budgetCents > 0 ? Math.min(100, Math.round((phaseInscriptionIncomeCents / budgetCents) * 100)) : null;
+  const budgetBalanceCents = phaseInscriptionIncomeCents - expenseCents - budgetCents;
 
   return {
-    balanceCents,
-    incomeCents,
-    expenseCents,
-    movementCount: Number(row.movementCount || 0),
+    balanceCents, // Real cumulative cash balance (constant)
+    incomeCents,  // Filtered income for selected phase
+    expenseCents, // Filtered expense for selected phase
+    movementCount,// Filtered movement count for selected phase
     tournament: {
       id: tournament.id,
       name: tournament.name,
       budgetCents,
-      phaseIncomeCents,
+      phaseIncomeCents: phaseInscriptionIncomeCents,
       pendingCollectionCents,
       collectionProgressPct,
       budgetBalanceCents,
