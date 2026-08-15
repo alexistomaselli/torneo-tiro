@@ -3187,10 +3187,15 @@ async function renderEstadisticas() {
         }
 
         if (state.currentTournamentId !== 6 && state.currentTournamentId !== 7) {
-          const optFinal = document.createElement('option');
-          optFinal.value = 'final_fase';
-          optFinal.textContent = `🏆 Gran Final ${state.selectedPhaseId === '3' ? 'Clausura' : 'Apertura'}`;
-          els.statsResultsRoundSelect.appendChild(optFinal);
+          const optClausura = document.createElement('option');
+          optClausura.value = 'final_clausura';
+          optClausura.textContent = `🏆 GRAN FINAL CLAUSURA`;
+          els.statsResultsRoundSelect.appendChild(optClausura);
+
+          const optFinalesApertura = document.createElement('option');
+          optFinalesApertura.value = 'finales_apertura';
+          optFinalesApertura.textContent = `🏆 FINALES APERTURA (TORNEO CORTO + GRAN FINAL)`;
+          els.statsResultsRoundSelect.appendChild(optFinalesApertura);
         }
 
         try {
@@ -3490,8 +3495,17 @@ async function renderResultsByDate(round) {
       const isPlayed = m.status === 'played';
       const scoreColor = isPlayed ? 'text-white' : 'text-gray-600';
 
+      const matchHeaderLabel = (m.id === 157 || (m.phase_tournament_id === 2 && m.roundNumber === 6))
+        ? '🏆 Final Torneo Corto Apertura (Zonas A y B)'
+        : ((m.id === 158 || m.phase_tournament_id === 6) ? '🏆 Gran Final Torneo Apertura 2026' : null);
+
       return `
-        <div class="bg-surface-900/40 rounded-xl p-3 border border-white/5 hover:border-pitch-500/20 transition-all group">
+        <div class="bg-surface-900/40 rounded-xl p-3 border border-white/5 hover:border-pitch-500/20 transition-all group mb-3">
+          ${matchHeaderLabel ? `
+            <div class="text-[10px] font-black text-amber-400 uppercase tracking-widest mb-2 text-center bg-amber-500/10 py-1.5 px-2 rounded border border-amber-500/20">
+              ${matchHeaderLabel}
+            </div>
+          ` : ''}
           <!-- Score Row -->
           <div class="flex items-center justify-between gap-4 mb-2">
             <div class="flex-1 flex items-center gap-2 justify-end">
@@ -3500,10 +3514,13 @@ async function renderResultsByDate(round) {
                 ${m.homeTeamShield ? `<img src="${escapeAttr(m.homeTeamShield)}" class="w-full h-full object-contain" />` : ''}
               </div>
             </div>
-            <div class="flex items-center gap-1.5 px-3 py-1 bg-surface-950 rounded-lg border border-white/5 group-hover:border-pitch-500/30 transition-colors">
-              <span class="text-sm font-black ${scoreColor}">${isPlayed ? m.homeScore : '-'}</span>
-              <span class="text-[10px] text-gray-700 font-bold">:</span>
-              <span class="text-sm font-black ${scoreColor}">${isPlayed ? m.awayScore : '-'}</span>
+            <div class="flex flex-col items-center">
+              <div class="flex items-center gap-1.5 px-3 py-1 bg-surface-950 rounded-lg border border-white/5 group-hover:border-pitch-500/30 transition-colors">
+                <span class="text-sm font-black ${scoreColor}">${isPlayed ? m.homeScore : '-'}</span>
+                <span class="text-[10px] text-gray-700 font-bold">:</span>
+                <span class="text-sm font-black ${scoreColor}">${isPlayed ? m.awayScore : '-'}</span>
+              </div>
+              ${m.penaltiesInfo ? `<span class="text-[9px] text-amber-400 font-bold mt-1 text-center">${escapeHTML(m.penaltiesInfo)}</span>` : ''}
             </div>
             <div class="flex-1 flex items-center gap-2">
               <div class="w-6 h-6 rounded bg-surface-850 p-1 flex-shrink-0">
