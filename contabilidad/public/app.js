@@ -2693,6 +2693,10 @@ async function generateStatsReport() {
       fetch(`/api/stats/standings?tournamentId=${tournamentId}${simulateDeduction ? '&simulateDeduction=true' : ''}`)
     ];
 
+    const statsQuery = (roundVal === 'finales_apertura' || roundVal === 'final_apertura')
+      ? 'phaseId=1'
+      : (roundVal === 'final_clausura' ? 'phaseId=2' : (state.currentTournamentId === 'all' || !state.currentTournamentId ? `phaseId=${state.selectedPhaseId || '1'}` : `phaseId=${state.selectedPhaseId || '1'}`));
+
     const [
       scorersRes,
       cardsRes,
@@ -2700,9 +2704,9 @@ async function generateStatsReport() {
       detailedResultsRes,
       ...standingsResList
     ] = await Promise.all([
-      fetch(`/api/stats/scorers?tournamentId=${state.currentTournamentId}`),
-      fetch(`/api/stats/cards?tournamentId=${state.currentTournamentId}`),
-      fetch(`/api/stats/suspended?tournamentId=${state.currentTournamentId}`),
+      fetch(`/api/stats/scorers?${statsQuery}`),
+      fetch(`/api/stats/cards?${statsQuery}`),
+      fetch(`/api/stats/suspended?${statsQuery}`),
       fetch(`/api/stats/results?tournamentId=${tournamentId}&round=${roundVal}`),
       ...standingsPromises
     ]);
@@ -2862,7 +2866,7 @@ async function generateStatsReport() {
 
         <div class="report-grid">
           <!-- Standings -->
-          ${isZonas ? `
+          ${isSpecialFinal ? '' : (isZonas ? `
             <div class="report-card col-span-2">
               <div class="report-section-title">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
@@ -2945,7 +2949,7 @@ async function generateStatsReport() {
                 </p>
               </div>
             </div>
-          `}
+          `)}
 
           <!-- Suspended -->
           <div class="report-card col-span-2">
