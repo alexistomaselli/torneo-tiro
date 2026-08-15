@@ -2982,7 +2982,7 @@ async function generateStatsReport() {
                       <div class="text-[10px] text-gray-500 uppercase font-semibold mt-0.5">
                         ${s.isPending ? `Sanción: <span class="text-amber-500 font-bold">PENDIENTE</span> <span class="text-[9px] text-amber-500/60">(Cumplidas: ${s.servedMatches})</span>` : `Total: ${s.originalSuspension} fechas`}
                       </div>
-                      <div class="text-[9px] text-gray-600 mt-1">Dada en Fecha ${s.cardRound}</div>
+                      <div class="text-[9px] text-gray-600 mt-1">Dada en ${escapeHTML(s.cardRoundText || ('Fecha ' + s.cardRound))}</div>
                     </td>
                     <td class="text-center">
                       <div class="inline-flex flex-col items-center gap-1">
@@ -3469,7 +3469,7 @@ async function renderEstadisticas() {
                 <div class="text-[10px] text-gray-500 uppercase font-semibold mt-0.5">
                   Sanción: ${s.isPending ? `<span class="text-amber-500 animate-pulse">PENDIENTE</span> <span class="text-[9px] text-amber-500/80">(Cumplidas: ${s.servedMatches})</span>` : `${s.originalSuspension} fechas`}
                 </div>
-                <div class="text-[9px] text-gray-600 mt-1">Dada en Fecha ${s.cardRound}</div>
+                <div class="text-[9px] text-gray-600 mt-1">Dada en ${escapeHTML(s.cardRoundText || ('Fecha ' + s.cardRound))}</div>
               </td>
               <td class="py-3 px-4 text-left md:text-center w-36">
                 <div class="inline-flex w-full md:w-auto flex-col items-center gap-1.5 p-2 rounded bg-red-500/10 border border-red-500/20 shadow-inner">

@@ -208,7 +208,7 @@ function generatePDF() {
   // Score Box
   doc.rect(45, box2Y + 30, 505, 32).fill('#1e293b');
   doc.fillColor('#ffffff').fontSize(11).font('Helvetica-Bold').text('ORDEN MADERAS   1  :  1   ACINOM II', 45, box2Y + 37, { align: 'center' });
-  doc.fillColor('#fbbf24').fontSize(8).font('Helvetica-Bold').text('Penales: 4 - 3 (Ganó Orden Maderas)', 45, box2Y + 50, { align: 'center' });
+  doc.fillColor('#fbbf24').fontSize(8).font('Helvetica-Bold').text('Penales: 5 - 4 (Ganó Orden Maderas)', 45, box2Y + 50, { align: 'center' });
 
   // Incidencias Row
   let inc2Y = box2Y + 70;

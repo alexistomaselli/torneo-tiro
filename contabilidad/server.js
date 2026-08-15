@@ -1418,6 +1418,8 @@ async function handleStatsApi(req, res, url) {
                mc.suspension_matches AS originalSuspension,
                mc.is_pending_suspension AS isPending,
                m.round_number AS cardRound,
+               m.phase_tournament_id AS phaseTournamentId,
+               pt.label AS phaseLabel,
                m.id AS matchId,
                mc.details,
                (
@@ -1438,6 +1440,7 @@ async function handleStatsApi(req, res, url) {
         JOIN players p ON p.id = mc.player_id
         JOIN teams t ON t.id = p.team_id
         JOIN matches m ON m.id = mc.match_id
+        JOIN phase_tournaments pt ON pt.id = m.phase_tournament_id
         WHERE mc.card_type = 'red'
           AND (
             mc.is_pending_suspension = 1
@@ -1461,6 +1464,13 @@ async function handleStatsApi(req, res, url) {
 
       suspended.forEach(s => {
         s.suspensionType = s.details ? s.details : 'Roja Directa';
+        if (s.phaseTournamentId === 6 || s.phaseTournamentId === 7 || (s.phaseLabel && s.phaseLabel.toLowerCase().includes('final')) || s.matchId === 158) {
+          s.cardRoundText = 'la Gran Final';
+        } else if (s.cardRound === 6 && s.phaseTournamentId === 2) {
+          s.cardRoundText = 'la Final Torneo Corto';
+        } else {
+          s.cardRoundText = `Fecha ${s.cardRound}`;
+        }
       });
 
       // 2. Find players with exactly 4 yellow cards (or multiples of 4) grouped by phase
@@ -1488,7 +1498,7 @@ async function handleStatsApi(req, res, url) {
       for (const p of playersWith4Yellows) {
         // Find all yellow cards of this player in this specific phase
         const yellowCards = db.prepare(`
-          SELECT mc.id AS cardId, mc.match_id AS matchId, m.round_number AS cardRound
+          SELECT mc.id AS cardId, mc.match_id AS matchId, m.round_number AS cardRound, m.phase_tournament_id AS phaseTournamentId, pt.label AS phaseLabel
           FROM match_cards mc
           JOIN matches m ON m.id = mc.match_id
           JOIN phase_tournaments pt ON pt.id = m.phase_tournament_id
@@ -1516,6 +1526,13 @@ async function handleStatsApi(req, res, url) {
           const remainingMatches = originalSuspension - servedMatches;
 
           if (remainingMatches > 0) {
+            let triggerRoundText = `Fecha ${triggerCard.cardRound}`;
+            if (triggerCard.phaseTournamentId === 6 || triggerCard.phaseTournamentId === 7 || (triggerCard.phaseLabel && triggerCard.phaseLabel.toLowerCase().includes('final')) || triggerCard.matchId === 158) {
+              triggerRoundText = 'la Gran Final';
+            } else if (triggerCard.cardRound === 6 && triggerCard.phaseTournamentId === 2) {
+              triggerRoundText = 'la Final Torneo Corto';
+            }
+
             suspended.push({
               cardId: triggerCard.cardId,
               id: p.id,
@@ -1525,6 +1542,7 @@ async function handleStatsApi(req, res, url) {
               originalSuspension: originalSuspension,
               isPending: 0,
               cardRound: triggerCard.cardRound,
+              cardRoundText: triggerRoundText,
               servedMatches: servedMatches,
               remainingMatches: remainingMatches,
               suspensionType: '4 Amarillas'
