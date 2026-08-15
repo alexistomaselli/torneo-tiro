@@ -3104,7 +3104,7 @@ async function generateStatsReport() {
     const originalTitle = document.title;
     const cleanTournamentName = tournamentName.replace(/[^a-z0-9]/gi, '-');
     const today = new Date().toISOString().split('T')[0];
-    document.title = `Reporte-Semanal-${cleanTournamentName}-Fecha${round}-${today}`;
+    document.title = `Reporte-Semanal-${cleanTournamentName}-${roundVal}-${today}`;
 
     // Use a small delay for CSS and images to apply
     setTimeout(() => {
