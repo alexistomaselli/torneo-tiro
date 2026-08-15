@@ -588,7 +588,7 @@ function renderTeamOptions() {
   if (current) select.value = current;
 
   if (filterSelect) {
-    filterSelect.innerHTML = '<option value="all">Todos</option>' + 
+    filterSelect.innerHTML = '<option value="all">Todos</option>' +
       '<option value="0">General (Sin equipo)</option>' +
       optionsHtml;
     filterSelect.value = currentFilter;
@@ -618,9 +618,9 @@ function renderTeams() {
           <p class="text-sm font-bold text-white truncate flex items-center gap-1.5">
             ${escapeHTML(team.name || 'Sin nombre')}
             ${team.pointsDeduction
-              ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest bg-red-500/10 text-red-400 border border-red-500/20 shadow-sm" title="Equipos con sanción pendiente de cumplimiento, quedando sujetos a la quita de los puntos obtenidos entre la Fecha 1 y la Fecha 9 inclusive, conforme al reglamento vigente.">Sancionado</span>`
-              : ''
-            }
+        ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest bg-red-500/10 text-red-400 border border-red-500/20 shadow-sm" title="Equipos con sanción pendiente de cumplimiento, quedando sujetos a la quita de los puntos obtenidos entre la Fecha 1 y la Fecha 9 inclusive, conforme al reglamento vigente.">Sancionado</span>`
+        : ''
+      }
           </p>
           <p class="text-xs text-gray-500 truncate">${escapeHTML(team.notes || 'Sin notas')}</p>
         </div>
@@ -814,12 +814,12 @@ async function deletePlayerGlobal(playerId, playerName) {
 function openCreatePlayerModal() {
   if (!els.editPlayerModal) return;
   els.editPlayerId.value = '';
-  
+
   if (els.editPlayerTeamId) {
     const sortedTeams = (state.allTeamsList || state.teams || []).slice().sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     els.editPlayerTeamId.innerHTML = sortedTeams.map(t => `<option value="${t.id}">${escapeHTML(t.name)}</option>`).join('');
   }
-  
+
   els.editPlayerName.value = '';
   els.editPlayerNumber.value = '';
   els.editPlayerDni.value = '';
@@ -995,13 +995,13 @@ function openEditPlayerModal(playerJsonEncoded, teamId) {
   try {
     const p = JSON.parse(decodeURIComponent(playerJsonEncoded));
     els.editPlayerId.value = p.id;
-    
+
     if (els.editPlayerTeamId) {
       const sortedTeams = state.teams.slice().sort((a, b) => Number(a.slotNumber || 0) - Number(b.slotNumber || 0));
       els.editPlayerTeamId.innerHTML = sortedTeams.map(t => `<option value="${t.id}">${escapeHTML(t.name)}</option>`).join('');
       els.editPlayerTeamId.value = teamId;
     }
-    
+
     els.editPlayerName.value = p.name || '';
     els.editPlayerNumber.value = p.number || '';
     els.editPlayerDni.value = p.dni || '';
@@ -1758,14 +1758,14 @@ function renderStandingsHtml(standings, showZoneBadge) {
         <img src="${s.shieldUrl || './escudo-default.png'}" class="w-8 h-8 object-contain" />
         <span class="flex items-center gap-1.5">
           ${escapeHTML(s.name)}
-          ${idx === 0 
-            ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-black bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-sm" title="Campeón">C</span>` 
-            : ''
-          }
+          ${idx === 0
+        ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-black bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-sm" title="Campeón">C</span>`
+        : ''
+      }
           ${s.pointsDeduction
-            ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest bg-red-500/10 text-red-400 border border-red-500/20 shadow-sm" title="Equipos con sanción pendiente de cumplimiento, quedando sujetos a la quita de los puntos obtenidos entre la Fecha 1 y la Fecha 9 inclusive, conforme al reglamento vigente.">Sancionado</span>`
-            : ''
-          }
+        ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest bg-red-500/10 text-red-400 border border-red-500/20 shadow-sm" title="Equipos con sanción pendiente de cumplimiento, quedando sujetos a la quita de los puntos obtenidos entre la Fecha 1 y la Fecha 9 inclusive, conforme al reglamento vigente.">Sancionado</span>`
+        : ''
+      }
         </span>
       </td>
       <td>${s.pj}</td><td>${s.pg}</td><td>${s.pe}</td><td>${s.pp}</td>
@@ -2345,7 +2345,7 @@ window.addMatchCard = async function (matchId, playerId, teamId, cardType) {
         return;
       }
     }
-    
+
     const detailsInput = prompt('¿Detalle de la sanción (Opcional, ej. Doble Amarilla)?');
     if (detailsInput !== null && detailsInput.trim() !== '') {
       details = detailsInput.trim();
@@ -2519,7 +2519,7 @@ async function updateGoalsPanel(matchId, homeTeamId, awayTeamId) {
     const awayPlayers = allPlayers.filter(p => Number(p.teamId) === Number(awayTeamId));
 
     panel.innerHTML = renderGoalsPanelHtml(matchId, homePlayers, awayPlayers, matchGoals, homeTeamId, awayTeamId);
-    
+
     // Restore and apply filter if exists
     if (oldTerm) {
       const input = panel.querySelector('input[placeholder="Filtrar jugadores..."]');
@@ -2650,21 +2650,36 @@ async function openStatsReportModal() {
     const res = await fetch(`/api/stats/current-round?tournamentId=${tournamentId}`);
     if (!res.ok) throw new Error('Error al obtener fecha actual');
     const { currentRound } = await res.json();
-    
-    els.selectReportFecha.innerHTML = Array.from({ length: currentRound }, (_, i) => `<option value="${i + 1}">Fecha ${i + 1}</option>`).join('');
+
+    let optionsHtml = Array.from({ length: currentRound }, (_, i) => `<option value="${i + 1}">Fecha ${i + 1}</option>`).join('');
+    optionsHtml += `
+      <option value="finales_apertura">🏆 FINALES APERTURA (TORNEO CORTO + GRAN FINAL)</option>
+      <option value="final_clausura">🏆 GRAN FINAL CLAUSURA</option>
+    `;
+    els.selectReportFecha.innerHTML = optionsHtml;
   } catch (err) {
     console.error(err);
-    const maxRound = state.currentTournamentType === 'zonas' ? 5 : 15;
-    els.selectReportFecha.innerHTML = Array.from({ length: maxRound }, (_, i) => `<option value="${i + 1}">Fecha ${i + 1}</option>`).join('');
+    const maxRound = state.currentTournamentType === 'zonas' ? 5 : 11;
+    let optionsHtml = Array.from({ length: maxRound }, (_, i) => `<option value="${i + 1}">Fecha ${i + 1}</option>`).join('');
+    optionsHtml += `
+      <option value="finales_apertura">🏆 FINALES APERTURA (TORNEO CORTO + GRAN FINAL)</option>
+      <option value="final_clausura">🏆 GRAN FINAL CLAUSURA</option>
+    `;
+    els.selectReportFecha.innerHTML = optionsHtml;
   }
 
   els.modalStatsPdf.classList.remove('hidden');
 }
 
 async function generateStatsReport() {
-  const round = parseInt(els.selectReportFecha.value, 10);
+  const roundVal = els.selectReportFecha.value;
+  const isSpecialFinal = roundVal === 'finales_apertura' || roundVal === 'final_clausura' || roundVal === 'final_fase';
+  const roundLabel = roundVal === 'finales_apertura'
+    ? 'FINALES APERTURA'
+    : (roundVal === 'final_clausura' ? 'GRAN FINAL CLAUSURA' : `FECHA ${roundVal}`);
+
   els.modalStatsPdf.classList.add('hidden');
-  showToast(`Generando reporte Fecha ${round}...`, 'info');
+  showToast(`Generando reporte ${roundLabel}...`, 'info');
 
   try {
     const tournamentId = state.currentTournamentId === 'all' ? 1 : state.currentTournamentId;
@@ -2688,7 +2703,7 @@ async function generateStatsReport() {
       fetch(`/api/stats/scorers?tournamentId=${state.currentTournamentId}`),
       fetch(`/api/stats/cards?tournamentId=${state.currentTournamentId}`),
       fetch(`/api/stats/suspended?tournamentId=${state.currentTournamentId}`),
-      fetch(`/api/stats/results?tournamentId=${tournamentId}&round=${round}`),
+      fetch(`/api/stats/results?tournamentId=${tournamentId}&round=${roundVal}`),
       ...standingsPromises
     ]);
 
@@ -2718,14 +2733,14 @@ async function generateStatsReport() {
             <img src="${s.shieldUrl || './escudo-default.png'}" class="w-6 h-6 object-contain">
             <span class="font-bold text-white flex items-center gap-1.5">
               ${escapeHTML(s.name)}
-              ${showBadges && idx === 0 
-                ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-black bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-sm ml-1 select-none font-sans" title="Campeón">C</span>` 
-                : ''
-              }
+              ${showBadges && idx === 0
+        ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-black bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-sm ml-1 select-none font-sans" title="Campeón">C</span>`
+        : ''
+      }
               ${showBadges && s.pointsDeduction
-                ? `<span class="text-red-500 font-extrabold text-sm ml-1 select-none" title="Equipos con sanción pendiente de cumplimiento, quedando sujetos a la quita de los puntos obtenidos entre la Fecha 1 y la Fecha 9 inclusive, conforme al reglamento vigente.">*</span>`
-                : ''
-              }
+        ? `<span class="text-red-500 font-extrabold text-sm ml-1 select-none" title="Equipos con sanción pendiente de cumplimiento, quedando sujetos a la quita de los puntos obtenidos entre la Fecha 1 y la Fecha 9 inclusive, conforme al reglamento vigente.">*</span>`
+        : ''
+      }
             </span>
           </div>
         </td>
@@ -2752,7 +2767,7 @@ async function generateStatsReport() {
             </div>
           </div>
           <div class="report-header-info">
-            <h2 class="text-white">FECHA ${round}</h2>
+            <h2 class="text-white">${roundLabel}</h2>
             <p>${new Date().toLocaleDateString('es-AR')}</p>
           </div>
         </div>
@@ -2777,17 +2792,29 @@ async function generateStatsReport() {
       const homeCards = m.cards?.filter(c => c.teamId === m.homeTeamId) || [];
       const awayCards = m.cards?.filter(c => c.teamId === m.awayTeamId) || [];
 
+      const matchHeaderLabel = (m.id === 157 || (m.phase_tournament_id === 2 && m.roundNumber === 6))
+        ? '🏆 Final Torneo Corto Apertura (Zonas A y B)'
+        : ((m.id === 158 || m.phase_tournament_id === 6) ? '🏆 Gran Final Torneo Apertura 2026' : null);
+
       return `
-                <div class="report-match-card report-card">
+                <div class="report-match-card report-card mb-4">
+                  ${matchHeaderLabel ? `
+                    <div class="text-[10px] font-black text-amber-400 uppercase tracking-widest text-center mb-3 bg-amber-500/10 py-1.5 px-2 rounded border border-amber-500/20">
+                      ${matchHeaderLabel}
+                    </div>
+                  ` : ''}
                   <div class="flex items-center justify-between mb-4 border-b border-white/5 pb-3">
                     <div class="flex items-center gap-3 flex-1">
                       <img src="${m.homeTeamShield || './escudo-default.png'}" class="w-8 h-8 object-contain">
                       <div class="text-xs font-black text-white uppercase tracking-tight">${escapeHTML(m.homeTeamName)}</div>
                     </div>
-                    <div class="flex items-center gap-2 bg-surface-900 border border-white/10 rounded-xl px-4 py-2 mx-4">
-                      <span class="text-xl font-black text-white">${m.status === 'played' ? m.homeScore : '-'}</span>
-                      <span class="text-gray-600 font-bold">:</span>
-                      <span class="text-xl font-black text-white">${m.status === 'played' ? m.awayScore : '-'}</span>
+                    <div class="flex flex-col items-center mx-4">
+                      <div class="flex items-center gap-2 bg-surface-900 border border-white/10 rounded-xl px-4 py-2">
+                        <span class="text-xl font-black text-white">${m.status === 'played' ? m.homeScore : '-'}</span>
+                        <span class="text-gray-600 font-bold">:</span>
+                        <span class="text-xl font-black text-white">${m.status === 'played' ? m.awayScore : '-'}</span>
+                      </div>
+                      ${m.penaltiesInfo ? `<span class="text-[9px] text-amber-400 font-bold mt-1 text-center">${escapeHTML(m.penaltiesInfo)}</span>` : ''}
                     </div>
                     <div class="flex items-center gap-3 flex-1 justify-end">
                       <div class="text-xs font-black text-white uppercase tracking-tight text-right">${escapeHTML(m.awayTeamName)}</div>
@@ -3034,7 +3061,18 @@ async function generateStatsReport() {
                       </div>
                     </td>
                     <td class="text-center">
-                      <span class="bg-amber-400 text-amber-950 px-1.5 py-0.5 rounded-sm font-black text-[10px]">${c.yellowCards}</span>
+                      <div class="flex flex-col items-center">
+                        <span class="bg-amber-400 text-amber-950 px-1.5 py-0.5 rounded-sm font-black text-[10px]">${c.yellowCards}</span>
+                        ${c.yellowSuspensionStatus === 'cumplida' ? `
+                          <span class="text-[8px] text-emerald-400 font-extrabold whitespace-nowrap bg-emerald-500/10 px-1 py-0.5 rounded border border-emerald-500/20 mt-0.5">
+                            ✓ 1 fecha cumplida
+                          </span>
+                        ` : (c.yellowSuspensionStatus === 'pendiente' ? `
+                          <span class="text-[8px] text-amber-400 font-extrabold whitespace-nowrap bg-amber-500/10 px-1 py-0.5 rounded border border-amber-500/20 mt-0.5">
+                            ⚠️ Susp. 1 fecha
+                          </span>
+                        ` : '')}
+                      </div>
                     </td>
                     <td class="text-center">
                       <span class="bg-red-600 text-white px-1.5 py-0.5 rounded-sm font-black text-[10px]">${c.redCards}</span>
@@ -3165,7 +3203,7 @@ async function renderEstadisticas() {
       if (els.statsResultsRoundSelect && (els.statsResultsRoundSelect.options.length === 0 || els.statsResultsRoundSelect.dataset.lastTournamentId !== String(state.currentTournamentId))) {
         els.statsResultsRoundSelect.innerHTML = '';
         els.statsResultsRoundSelect.dataset.lastTournamentId = state.currentTournamentId;
-        
+
         let roundsCount = 11;
         if (state.currentTournamentType === 'zonas') {
           roundsCount = 6;
@@ -3325,14 +3363,14 @@ async function renderEstadisticas() {
               </div>
               <span class="font-bold text-gray-200 text-sm flex items-center gap-1">
                 ${escapeHTML(s.name)}
-                ${idx === 0 
-                  ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-black bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-sm ml-1 select-none" title="Campeón">C</span>` 
-                  : ''
-                }
+                ${idx === 0
+          ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-black bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-sm ml-1 select-none" title="Campeón">C</span>`
+          : ''
+        }
                 ${s.pointsDeduction
-                  ? `<span class="text-red-500 font-extrabold text-sm select-none" title="Equipos con sanción pendiente de cumplimiento, quedando sujetos a la quita de los puntos obtenidos entre la Fecha 1 y la Fecha 9 inclusive, conforme al reglamento vigente.">*</span>`
-                  : ''
-                }
+          ? `<span class="text-red-500 font-extrabold text-sm select-none" title="Equipos con sanción pendiente de cumplimiento, quedando sujetos a la quita de los puntos obtenidos entre la Fecha 1 y la Fecha 9 inclusive, conforme al reglamento vigente.">*</span>`
+          : ''
+        }
               </span>
             </div>
           </td>
@@ -3497,7 +3535,7 @@ async function renderResultsByDate(round) {
 
       const matchHeaderLabel = (m.id === 157 || (m.phase_tournament_id === 2 && m.roundNumber === 6))
         ? '🏆 Final Torneo Corto Apertura (Zonas A y B)'
-        : ((m.id === 158 || m.phase_tournament_id === 6) ? '🏆 Gran Final Torneo Apertura 2026' : null);
+        : ((m.id === 158 || m.phase_tournament_id === 6) ? '🏆 Final Torneo Apertura 2026' : null);
 
       return `
         <div class="bg-surface-900/40 rounded-xl p-3 border border-white/5 hover:border-pitch-500/20 transition-all group mb-3">
@@ -3679,10 +3717,10 @@ async function showPlayerHistory(playerId, playerName, teamName, shieldUrl) {
   }
 }
 
-window.resolvePendingSuspension = async function(cardId, playerName) {
+window.resolvePendingSuspension = async function (cardId, playerName) {
   const matchesStr = prompt(`Definir cantidad de fechas de suspensión para ${playerName}:`, "1");
   if (matchesStr === null) return;
-  
+
   const matches = parseInt(matchesStr, 10);
   if (isNaN(matches) || matches < 0) {
     showToast('Cantidad de fechas inválida', 'error');
@@ -3715,12 +3753,12 @@ window.resolvePendingSuspension = async function(cardId, playerName) {
 /* ── HISTORIAL SUB-TABS & CHARTS ── */
 function switchHistorialSubtab(subtab) {
   state.currentHistorialSubtab = subtab;
-  
+
   const subtabList = document.getElementById('historial-subtab-list');
   const subtabChart = document.getElementById('historial-subtab-chart');
   const listView = document.getElementById('historial-list-view');
   const chartView = document.getElementById('historial-chart-view');
-  
+
   if (subtabList && subtabChart && listView && chartView) {
     if (subtab === 'list') {
       subtabList.classList.add('active');
@@ -3739,10 +3777,10 @@ function switchHistorialSubtab(subtab) {
 
 function switchChartMode(mode) {
   state.currentChartMode = mode;
-  
+
   const togglePaid = document.getElementById('chart-toggle-paid');
   const togglePending = document.getElementById('chart-toggle-pending');
-  
+
   if (togglePaid && togglePending) {
     if (mode === 'paid') {
       togglePaid.className = "px-4 py-1.5 rounded-lg text-xs font-bold bg-pitch-500/10 text-pitch-400 border border-pitch-500/20 transition-all";
@@ -3752,7 +3790,7 @@ function switchChartMode(mode) {
       togglePaid.className = "px-4 py-1.5 rounded-lg text-xs font-bold text-gray-400 hover:text-white transition-all";
     }
   }
-  
+
   renderCategoryChart();
 }
 
@@ -3772,7 +3810,7 @@ function renderCategoryChart() {
   // Actualizar indicadores adicionales (Dinero Disponible y Dinero por Cobrar)
   const chartAvailableMoney = els.chartAvailableMoney;
   const chartPendingCollection = els.chartPendingCollection;
-  
+
   if (chartAvailableMoney) {
     const balance = state.summary?.balanceCents || 0;
     chartAvailableMoney.textContent = formatMoney(balance);
@@ -3845,10 +3883,10 @@ function renderCategoryChart() {
       const budgetCents = totalRounds * costPerRound;
       const paidCents = groups[catName] || 0;
       const pendingCents = Math.max(0, budgetCents - paidCents);
-      
+
       const paidRounds = Math.min(totalRounds, Math.round(paidCents / costPerRound));
       const paidPercent = budgetCents > 0 ? (paidCents / budgetCents) * 100 : 0;
-      
+
       if (pendingCents > 0) {
         categories.push({
           name: catName,
@@ -3925,7 +3963,7 @@ function renderCategoryChart() {
   const radius = 45;
   const strokeWidth = 12;
   const circ = 2 * Math.PI * radius;
-  
+
   let currentAngle = 0;
   let donutHtml = '';
 
@@ -3934,7 +3972,7 @@ function renderCategoryChart() {
     const strokeDasharray = circ;
     const strokeDashoffset = circ - (percent / 100) * circ;
     const rotation = currentAngle - 90;
-    
+
     donutHtml += `
       <circle cx="60" cy="60" r="${radius}"
         fill="none" stroke="${cat.color}" stroke-width="${strokeWidth}"
@@ -3947,7 +3985,7 @@ function renderCategoryChart() {
     currentAngle += (percent / 100) * 360;
   });
 
-  donutHtml += `<circle cx="60" cy="60" r="${radius - strokeWidth/2 - 2}" fill="#161920" class="pointer-events-none" />`;
+  donutHtml += `<circle cx="60" cy="60" r="${radius - strokeWidth / 2 - 2}" fill="#161920" class="pointer-events-none" />`;
   donutSvg.innerHTML = donutHtml;
 
   listContainer.innerHTML = categories.map((cat, index) => {
@@ -4069,7 +4107,7 @@ function renderCategoryChart() {
     'Arbitraje': 370000 * 100,
     'Alquiler de cancha': 260000 * 100,
   };
-  
+
   const pendingGroups = {};
   let totalPendingCents = 0;
   Object.keys(rules).forEach(catName => {
@@ -4144,7 +4182,7 @@ function renderCategoryChart() {
       const paidCents = paidGroups[name] || 0;
       const paidRounds = Math.min(totalRoundsVal, Math.round(paidCents / costPerRound));
       const pendingRounds = Math.max(0, totalRoundsVal - paidRounds);
-      
+
       return {
         name,
         amountCents: pendingGroups[name],
@@ -4187,7 +4225,7 @@ function renderCategoryChart() {
     const budgetCents = state.summary?.tournament?.budgetCents || 0;
     const costTournamentCents = totalPaidCents + totalPendingCents;
     const balanceCents = budgetCents - costTournamentCents;
-    
+
     const costPercent = budgetCents > 0 ? Math.min(100, (costTournamentCents / budgetCents) * 100) : 0;
     const balancePercent = budgetCents > 0 ? Math.max(0, (balanceCents / budgetCents) * 100) : 0;
     const isDeficit = balanceCents < 0;
@@ -4236,7 +4274,7 @@ function renderCategoryChart() {
 
 function exportFixturePdf() {
   const tournamentName = document.getElementById('tournamentName')?.textContent.trim() || 'Torneo';
-  
+
   // Find active phase name
   const activePhaseBtn = document.querySelector('#fixturePhaseBadges .phase-badge.active');
   const phaseName = activePhaseBtn ? activePhaseBtn.textContent.trim() : '';
