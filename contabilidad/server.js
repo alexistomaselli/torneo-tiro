@@ -1464,10 +1464,8 @@ async function handleStatsApi(req, res, url) {
 
       suspended.forEach(s => {
         s.suspensionType = s.details ? s.details : 'Roja Directa';
-        if (s.phaseTournamentId === 6 || s.phaseTournamentId === 7 || (s.phaseLabel && s.phaseLabel.toLowerCase().includes('final')) || s.matchId === 158) {
-          s.cardRoundText = 'la Gran Final';
-        } else if (s.cardRound === 6 && s.phaseTournamentId === 2) {
-          s.cardRoundText = 'la Final Torneo Corto';
+        if (s.phaseTournamentId === 6 || s.phaseTournamentId === 7 || (s.phaseLabel && s.phaseLabel.toLowerCase().includes('final')) || s.matchId === 158 || (s.cardRound === 6 && s.phaseTournamentId === 2)) {
+          s.cardRoundText = 'la Final';
         } else {
           s.cardRoundText = `Fecha ${s.cardRound}`;
         }
@@ -1527,10 +1525,8 @@ async function handleStatsApi(req, res, url) {
 
           if (remainingMatches > 0) {
             let triggerRoundText = `Fecha ${triggerCard.cardRound}`;
-            if (triggerCard.phaseTournamentId === 6 || triggerCard.phaseTournamentId === 7 || (triggerCard.phaseLabel && triggerCard.phaseLabel.toLowerCase().includes('final')) || triggerCard.matchId === 158) {
-              triggerRoundText = 'la Gran Final';
-            } else if (triggerCard.cardRound === 6 && triggerCard.phaseTournamentId === 2) {
-              triggerRoundText = 'la Final Torneo Corto';
+            if (triggerCard.phaseTournamentId === 6 || triggerCard.phaseTournamentId === 7 || (triggerCard.phaseLabel && triggerCard.phaseLabel.toLowerCase().includes('final')) || triggerCard.matchId === 158 || (triggerCard.cardRound === 6 && triggerCard.phaseTournamentId === 2)) {
+              triggerRoundText = 'la Final';
             }
 
             suspended.push({
