@@ -1346,7 +1346,7 @@ async function handleStatsApi(req, res, url) {
   // GET /api/stats/cards
   if (req.method === 'GET' && url.pathname === '/api/stats/cards') {
     let query = `
-      SELECT p.id, p.name AS playerName, t.name AS teamName, t.shield_url AS shieldUrl,
+      SELECT p.id, p.name AS playerName, t.id AS teamId, t.name AS teamName, t.shield_url AS shieldUrl,
              SUM(CASE WHEN mc.card_type = 'yellow' THEN 1 ELSE 0 END) AS yellowCards,
              SUM(CASE WHEN mc.card_type = 'red' THEN 1 ELSE 0 END) AS redCards,
              SUM(mc.suspension_matches) AS suspensionMatches
@@ -1365,6 +1365,42 @@ async function handleStatsApi(req, res, url) {
       ORDER BY yellowCards DESC, redCards DESC, p.name ASC
     `;
     const cards = db.prepare(query).all(...params).map(mapPlainObject);
+
+    cards.forEach(p => {
+      if (p.yellowCards >= 4) {
+        let yellowCardsQuery = `
+          SELECT mc.id AS cardId, mc.match_id AS matchId
+          FROM match_cards mc
+          JOIN matches m ON m.id = mc.match_id
+          JOIN phase_tournaments pt ON pt.id = m.phase_tournament_id
+          WHERE mc.player_id = ? AND mc.card_type = 'yellow'
+        `;
+        const yellowCardsParams = [p.id];
+        if (phaseId !== null) {
+          yellowCardsQuery += ` AND pt.phase_id = ?`;
+          yellowCardsParams.push(phaseId);
+        }
+        yellowCardsQuery += ` ORDER BY m.id ASC, mc.id ASC`;
+
+        const yellows = db.prepare(yellowCardsQuery).all(...yellowCardsParams).map(mapPlainObject);
+
+        if (yellows.length >= 4) {
+          const triggerCard = yellows[3];
+          const servedRow = db.prepare(`
+            SELECT COUNT(*) AS count
+            FROM matches m2
+            WHERE m2.status = 'played'
+              AND (m2.home_team_id = ? OR m2.away_team_id = ?)
+              AND m2.id > ?
+          `).get(p.teamId, p.teamId, triggerCard.matchId);
+
+          const servedMatches = Number(servedRow ? servedRow.count : 0);
+          p.yellowServedMatches = servedMatches;
+          p.yellowSuspensionStatus = servedMatches >= 1 ? 'cumplida' : 'pendiente';
+        }
+      }
+    });
+
     sendJson(res, 200, cards);
     return;
   }

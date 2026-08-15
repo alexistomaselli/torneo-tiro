@@ -3380,6 +3380,15 @@ async function renderEstadisticas() {
         <td class="py-3 px-4 text-center">
           <div class="inline-flex flex-col items-center">
             <span class="inline-flex items-center justify-center w-5 h-7 bg-amber-400 rounded-sm font-bold text-amber-950 text-xs shadow-lg shadow-amber-400/20 mb-1">${c.yellowCards}</span>
+            ${c.yellowSuspensionStatus === 'cumplida' ? `
+              <span class="text-[9px] text-emerald-400 font-extrabold whitespace-nowrap bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 shadow-sm mt-0.5 flex items-center gap-1" title="Cumplió 1 fecha de suspensión por acumular 4 amarillas">
+                ✓ 1 fecha cumplida
+              </span>
+            ` : (c.yellowSuspensionStatus === 'pendiente' ? `
+              <span class="text-[9px] text-amber-400 font-extrabold whitespace-nowrap bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20 shadow-sm mt-0.5 flex items-center gap-1" title="Pendiente de cumplir 1 fecha por 4 amarillas">
+                ⚠️ Susp. 1 fecha
+              </span>
+            ` : '')}
           </div>
         </td>
         <td class="py-3 px-4 text-center">
