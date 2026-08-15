@@ -1820,6 +1820,8 @@ function contentTypeFor(filePath) {
     case '.jpg':
     case '.jpeg':
       return 'image/jpeg';
+    case '.pdf':
+      return 'application/pdf';
     default:
       return 'application/octet-stream';
   }
