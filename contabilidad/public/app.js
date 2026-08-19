@@ -2541,8 +2541,8 @@ function renderGoalsPanelHtml(matchId, homePlayers, awayPlayers, goals, homeTeam
   const goalsList = goals.map(g => `
     <div class="flex items-center justify-between py-1 px-2 bg-surface-900/40 rounded mb-1 border border-white/5">
       <div class="flex items-center gap-2">
-        <span class="text-pitch-400 text-[10px] font-bold">${g.minute}'</span>
-        <span class="text-xs text-gray-300">${escapeHTML(g.playerName)}</span>
+        <span class="text-pitch-400 text-[10px] font-bold">${g.minute ? g.minute + "'" : ''}</span>
+        <span class="text-xs text-gray-300">${escapeHTML(g.playerName)} ${g.isOwnGoal ? '<span class="text-amber-400 font-bold text-[9px] ml-1">(e.c.)</span>' : ''}</span>
         <span class="text-[9px] text-gray-500 uppercase tracking-tighter">(${escapeHTML(g.teamName)})</span>
       </div>
       <button onclick="removeMatchGoal(${g.id}, ${matchId}, ${homeTeamId}, ${awayTeamId})" class="text-gray-600 hover:text-red-400 transition-colors">✕</button>
@@ -2568,9 +2568,15 @@ function renderGoalsPanelHtml(matchId, homePlayers, awayPlayers, goals, homeTeam
                 ${awayOptions}
               </optgroup>
             </select>
-            <div class="flex gap-2">
-              <input type="number" id="goal-min-${matchId}" placeholder="Min." class="w-16 bg-surface-900 border border-white/10 rounded px-2 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-pitch-500/50" />
-              <button onclick="addMatchGoal(${matchId}, ${homeTeamId}, ${awayTeamId})" class="flex-1 bg-pitch-600 hover:bg-pitch-500 text-white text-[10px] font-bold uppercase tracking-wider rounded transition-all py-1.5">Agregar Gol</button>
+            <div class="flex flex-col gap-2">
+              <div class="flex gap-2 items-center">
+                <input type="number" id="goal-min-${matchId}" placeholder="Min." class="w-16 bg-surface-900 border border-white/10 rounded px-2 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-pitch-500/50" />
+                <label class="flex items-center gap-1.5 cursor-pointer text-[10px] text-gray-300 select-none bg-surface-900 border border-white/10 px-2 py-1.5 rounded hover:border-amber-500/50 transition-colors flex-1">
+                  <input type="checkbox" id="goal-owngoal-${matchId}" class="accent-amber-500 rounded" />
+                  <span class="text-amber-400 font-bold">Gol en contra (e.c.)</span>
+                </label>
+              </div>
+              <button onclick="addMatchGoal(${matchId}, ${homeTeamId}, ${awayTeamId})" class="w-full bg-pitch-600 hover:bg-pitch-500 text-white text-[10px] font-bold uppercase tracking-wider rounded transition-all py-1.5">Agregar Gol</button>
             </div>
           </div>
         </div>
@@ -2588,8 +2594,10 @@ function renderGoalsPanelHtml(matchId, homePlayers, awayPlayers, goals, homeTeam
 window.addMatchGoal = async function (matchId, homeTeamId, awayTeamId) {
   const playerIdSelect = document.getElementById(`goal-player-${matchId}`);
   const minuteInput = document.getElementById(`goal-min-${matchId}`);
+  const ownGoalCheck = document.getElementById(`goal-owngoal-${matchId}`);
   const playerId = playerIdSelect.value;
   const minute = minuteInput.value;
+  const isOwnGoal = ownGoalCheck ? ownGoalCheck.checked : false;
 
   if (!playerId) {
     showToast('Selecciona un jugador', 'error');
@@ -2606,12 +2614,13 @@ window.addMatchGoal = async function (matchId, homeTeamId, awayTeamId) {
       body: JSON.stringify({
         playerId: parseInt(playerId),
         teamId: parseInt(teamId),
-        minute: parseInt(minute) || 0
+        minute: parseInt(minute) || 0,
+        isOwnGoal: isOwnGoal ? 1 : 0
       })
     });
 
     if (res.ok) {
-      showToast('Gol registrado');
+      showToast(isOwnGoal ? 'Gol en contra registrado' : 'Gol registrado');
       await updateGoalsPanel(matchId, homeTeamId, awayTeamId);
     } else {
       const data = await res.json();
@@ -3506,9 +3515,15 @@ async function renderEstadisticas() {
 function groupGoalsByPlayer(goals) {
   const grouped = {};
   goals.forEach(g => {
-    const key = g.playerId;
+    const isEc = g.isOwnGoal || g.is_own_goal;
+    const key = g.playerId + (isEc ? '_ec' : '');
     if (!grouped[key]) {
-      grouped[key] = { ...g, count: 0, minutes: [] };
+      grouped[key] = {
+        ...g,
+        playerName: g.playerName + (isEc ? ' (e.c.)' : ''),
+        count: 0,
+        minutes: []
+      };
     }
     grouped[key].count++;
     if (g.minute) grouped[key].minutes.push(g.minute);
