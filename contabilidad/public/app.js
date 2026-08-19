@@ -3582,6 +3582,7 @@ async function renderResultsByDate(round) {
                 <span class="text-sm font-black ${scoreColor}">${isPlayed ? m.awayScore : '-'}</span>
               </div>
               ${m.penaltiesInfo ? `<span class="text-[9px] text-amber-400 font-bold mt-1 text-center">${escapeHTML(m.penaltiesInfo)}</span>` : ''}
+              ${m.matchTime ? `<span class="text-[9px] font-extrabold text-pitch-400 bg-pitch-500/10 px-1.5 py-0.5 rounded border border-pitch-500/20 mt-1 select-none">${escapeHTML(m.matchTime)} hs</span>` : ''}
             </div>
             <div class="flex-1 flex items-center gap-2">
               <div class="w-6 h-6 rounded bg-surface-850 p-1 flex-shrink-0">
