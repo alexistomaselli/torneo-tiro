@@ -2793,12 +2793,16 @@ async function generateStatsReport() {
           <div class="space-y-4">
             ${roundResults.map(m => {
       // Group goals for display
-      const homeGoalsGrouped = m.goals?.filter(g => g.teamId === m.homeTeamId).reduce((acc, g) => {
-        acc[g.playerName] = (acc[g.playerName] || 0) + 1;
+      const homeGoalsGrouped = m.goals?.filter(g => (g.teamId === m.homeTeamId && !g.isOwnGoal && !g.is_own_goal) || (g.teamId === m.awayTeamId && (g.isOwnGoal || g.is_own_goal))).reduce((acc, g) => {
+        const isEc = g.isOwnGoal || g.is_own_goal;
+        const displayName = g.playerName + (isEc ? ' (e.c.)' : '');
+        acc[displayName] = (acc[displayName] || 0) + 1;
         return acc;
       }, {}) || {};
-      const awayGoalsGrouped = m.goals?.filter(g => g.teamId === m.awayTeamId).reduce((acc, g) => {
-        acc[g.playerName] = (acc[g.playerName] || 0) + 1;
+      const awayGoalsGrouped = m.goals?.filter(g => (g.teamId === m.awayTeamId && !g.isOwnGoal && !g.is_own_goal) || (g.teamId === m.homeTeamId && (g.isOwnGoal || g.is_own_goal))).reduce((acc, g) => {
+        const isEc = g.isOwnGoal || g.is_own_goal;
+        const displayName = g.playerName + (isEc ? ' (e.c.)' : '');
+        acc[displayName] = (acc[displayName] || 0) + 1;
         return acc;
       }, {}) || {};
 
@@ -3544,8 +3548,8 @@ async function renderResultsByDate(round) {
     }
 
     els.statsResultsContainerTbody.innerHTML = matches.map(m => {
-      const homeGoals = groupGoalsByPlayer(m.goals.filter(g => g.teamId === m.homeTeamId));
-      const awayGoals = groupGoalsByPlayer(m.goals.filter(g => g.teamId === m.awayTeamId));
+      const homeGoals = groupGoalsByPlayer(m.goals.filter(g => (g.teamId === m.homeTeamId && !g.isOwnGoal && !g.is_own_goal) || (g.teamId === m.awayTeamId && (g.isOwnGoal || g.is_own_goal))));
+      const awayGoals = groupGoalsByPlayer(m.goals.filter(g => (g.teamId === m.awayTeamId && !g.isOwnGoal && !g.is_own_goal) || (g.teamId === m.homeTeamId && (g.isOwnGoal || g.is_own_goal))));
       const homeCards = m.cards.filter(c => c.teamId === m.homeTeamId);
       const awayCards = m.cards.filter(c => c.teamId === m.awayTeamId);
 
